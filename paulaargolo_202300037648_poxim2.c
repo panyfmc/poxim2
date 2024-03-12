@@ -86,24 +86,16 @@ char *getRegisterBigger(uint32_t reg) {
 }
 
 
-uint64_t extend32To64(uint32_t d) {
-  uint64_t resposta = 0;
-  if (checkBit64(d, 31)) {
-    resposta = (uint64_t)(d) | 0xFFFFFFFF00000000;
-  } else {
-    resposta = (uint64_t)(d);
-  }
-  return resposta;
+uint64_t extendTo64(uint32_t num) {
+    uint64_t extendedNum;
+    if (num < 0)
+        extendedNum = ((uint64_t)num) | ((uint64_t)0xFFFFFFFF << 32);
+    else
+        extendedNum = (uint64_t)num;
+
+    return extendedNum;
 }
 
-
-uint64_t Complement64bits(uint32_t r) {
-  uint64_t Value = 0;
-  Value = extend32To64(r);
-  Value = ~Value;
-  Value = Value + 1;
-  return Value;
-}
 
 uint32_t setRegistrador(uint32_t r, uint32_t valor) {
   if (r == 0) {
@@ -549,17 +541,23 @@ int main(int argc, char *argv[]) {
             x = (R[28] & (0b11111 << 16)) >> 16;
             y = (R[28] & (0b11111 << 11)) >> 11;
 
+            //printf("ry = 0x%016X\n", R[y]);
+
             // R[z]:R[x]=(R[z]:R[y])*(2(l + 1))
-            tmpSra_1 = ((extend32To64(R[z]) << 32) | (extend32To64(R[y]) & 0xFFFFFFFF));
-            tmpSra_1 = tmpSrl_1 << (xyl + 1);
+            tmpSra_1 = (extendTo64(R[z]) | extendTo64(R[y]));
 
-            if (x != 0) {
-              R[x] = (uint32_t)(setRegistrador(x, (tmpSra_1) & 0xFFFFFFFF00000000));
-            }
+            printf("sra = 0x%016lX\n", tmpSra_1);
 
-            if (z != 0) {
-              R[z] = (uint32_t)(setRegistrador(z, (tmpSra_1 >> 32) & 0xFFFFFFFF));
-            }
+            tmpSra_1 = (tmpSra_1 << (xyl + 1));
+            
+            //printf("sra = 0x%016lX\n", tmpSra_1);
+
+            R[x] = (uint32_t)setRegistrador(x, (tmpSra_1) & 0xFFFFFFFF);
+            R[z] = (uint32_t)setRegistrador(z, (tmpSra_1 >> 32) & 0xFFFFFFFF);
+
+            printf("rz = 0x%016X\n", R[z]);
+            printf("rx = 0x%016X\n", R[x]);
+      
              
             tmpSra_1 = R[x] | R[z];
 
