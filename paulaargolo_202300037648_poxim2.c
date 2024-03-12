@@ -550,17 +550,17 @@ int main(int argc, char *argv[]) {
             y = (R[28] & (0b11111 << 11)) >> 11;
 
             // R[z]:R[x]=(R[z]:R[y])*(2(l + 1))
-            tmpSra_1 = (((uint64_t)R[z] << 32) | (uint64_t)R[y]);
+            tmpSra_1 = ((extend32To64(R[z]) << 32) | (extend32To64(R[y]) & 0xFFFFFFFF));
             tmpSra_1 = tmpSrl_1 << (xyl + 1);
 
-            verifyZero(z, 1, tmpSra_1);
-            verifyZero(x, 1, tmpSra_1);
+            if (x != 0) {
+              R[x] = (uint32_t)(setRegistrador(x, (tmpSra_1) & 0xFFFFFFFF00000000));
+            }
 
-            // Extracting the 32 most significant bits
-            R[z] = (uint32_t)setRegistrador(z, (tmpSra_1 >> 32) & 0xFFFFFFFF);
-            // Extracting the least significant bits 
-            R[x] = (uint32_t)setRegistrador(x, (tmpSra_1) & 0xFFFFFFFF);
-
+            if (z != 0) {
+              R[z] = (uint32_t)(setRegistrador(z, (tmpSra_1 >> 32) & 0xFFFFFFFF));
+            }
+             
             tmpSra_1 = R[x] | R[z];
 
             //zn rz : rx = 0
@@ -1587,31 +1587,30 @@ int main(int argc, char *argv[]) {
 
 
       case 0b100001:
-        //FTypeInstructionZXI(R, &z, &x, &i);
-        if (i == 0) {
-          // cbr
-          R[z] = R[z] & ~(0b1 << x);
 
-          //formatR(zName, z);
+        z = (R[28] & (0b11111 << 21)) >> 21;
+        x = (R[28] & (0b11111 << 16)) >> 16;
+        i = R[28] & 0xFFFF;
+
+        if (i == 0) {
+          //___
+          R[z] = R[z] & ~(0b1 << x);
+          
+
         //0x????????:	cbr rz[x]                	Rz=0x????????
-          sprintf(instruction, "cbr %s[%u]", x);
-          fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", R[29], instruction, zName, R[z]);
-          printf("0x%08X:\t%-25s\t%s=0x%08X\n", );
+          sprintf(instrucao, "cbr %s[%u]", getRegisterSmaller(z), x);
+          fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", R[29], instrucao, getRegisterBigger(z), R[z]);
+          printf("0x%08X:\t%-25s\t%s=0x%08X\n", R[29], instrucao, getRegisterBigger(z), R[z]);
         } else {
           // sbr
-          R[z] = R[z] | (0b1 << x);
+            R[z] = R[z] | (0b1 << x);
 
-          formatR(zName, z);
         //0x????????:	sbr rz[x]                	Rz=0x????????
-          sprintf(instruction, "sbr %s[%u]", zName, x);
-          fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", R[29], instruction, zName, R[z]);
-          printf("0x%08X:\t%-25s\t%s=0x%08X\n", );
+          sprintf(instrucao, "sbr %s[%u]", getRegisterSmaller(z), x);
+          fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", R[29], instrucao, getRegisterBigger(z), R[z]);
+          printf("0x%08X:\t%-25s\t%s=0x%08X\n", R[29], instrucao, getRegisterBigger(z), R[z]);
         }
         break;
-
-
-  
-
 
 
       default:
