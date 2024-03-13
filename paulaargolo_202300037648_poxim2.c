@@ -55,6 +55,10 @@ char *getRegisterSmaller(uint32_t reg) {
   char *result;
   if (reg == 28) {
     result = strdup("ir");
+  } else if (reg == 26) {
+    result = strdup("cr");
+  } else if (reg == 27) {
+    result = strdup("ipc");
   } else if (reg == 29) {
     result = strdup("pc");
   } else if (reg == 30) {
@@ -72,7 +76,11 @@ char *getRegisterBigger(uint32_t reg) {
   char *result;
   if (reg == 28) {
     result = strdup("IR");
-  } else if (reg == 29) {
+  } else if (reg == 26) {
+    result = strdup("CR");
+  } else if (reg == 27) {
+    result = strdup("IPC");
+  }else if (reg == 29) {
     result = strdup("PC");
   } else if (reg == 30) {
     result = strdup("SP");
@@ -106,6 +114,13 @@ uint32_t setRegistrador(uint32_t r, uint32_t valor) {
 }
 
 
+//void writeInWatchdog(Watchdog* watchdog, uint8_t numberOfBytes, uint32_t value, uint32_t address);
+
+struct watchdog(uint32_t address, uint32_t value);
+
+  
+
+
 int main(int argc, char *argv[]) { 
 
   FILE *input = fopen(argv[1], "r");
@@ -132,7 +147,7 @@ int main(int argc, char *argv[]) {
     char instrucao[30] = {0};
 
     uint8_t z = 0, x = 0, y = 0, v = 0, w = 0;
-    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0;
+    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0;
     uint64_t tmpSla_1 = 0, tmpSll_1 = 0,tmpSra_1 = 0, tmpSrl_1 = 0, cmp1 = 0, cmpi1 = 0, tmpMul_1 = 0, tmpMuls_1 = 0, tmpAdd_1 = 0;
 
     R[28] = ((MEM8[R[29] + 0] << 24) | (MEM8[R[29] + 1] << 16) | (MEM8[R[29] + 2] << 8) | (MEM8[R[29] + 3] << 0)) | MEM32[R[29] >> 2];
@@ -536,7 +551,7 @@ int main(int argc, char *argv[]) {
           case 0b111:
 
             pc = R[29];
-            xyl = R[28] & 0b11111;
+            i = R[28] & 0b11111;
             z = (R[28] & (0b11111 << 21)) >> 21;
             x = (R[28] & (0b11111 << 16)) >> 16;
             y = (R[28] & (0b11111 << 11)) >> 11;
@@ -545,19 +560,12 @@ int main(int argc, char *argv[]) {
 
             // R[z]:R[x]=(R[z]:R[y])*(2(l + 1))
             tmpSra_1 = (extendTo64(R[z]) | extendTo64(R[y]));
-
-            printf("sra = 0x%016lX\n", tmpSra_1);
-
-            tmpSra_1 = (tmpSra_1 << (xyl + 1));
+            tmpSra_1 = (tmpSra_1 >> (i + 1));
             
             //printf("sra = 0x%016lX\n", tmpSra_1);
 
             R[x] = (uint32_t)setRegistrador(x, (tmpSra_1) & 0xFFFFFFFF);
             R[z] = (uint32_t)setRegistrador(z, (tmpSra_1 >> 32) & 0xFFFFFFFF);
-
-            printf("rz = 0x%016X\n", R[z]);
-            printf("rx = 0x%016X\n", R[x]);
-      
              
             tmpSra_1 = R[x] | R[z];
 
@@ -577,9 +585,9 @@ int main(int argc, char *argv[]) {
             
            
             // 0x????????:	sra rz,rx,ry,u // Rz:Ry=Rz:Rx>>u=0x????????????????,SR=0x????????
-            sprintf(instrucao, "sra %s,%s,%s,%u", getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y), xyl);
-            fprintf(output, "0x%08X:\t%-25s\t%s:%s=%s:%s>>%u=0x%016lX,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(y), getRegisterBigger(z), getRegisterBigger(x), xyl + 1, tmpSra_1, R[31]);
-            printf("0x%08X:\t%-25s\t%s:%s=%s:%s>>%u=0x%016lX,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(y), getRegisterBigger(z), getRegisterBigger(x), xyl + 1, tmpSra_1, R[31]);
+            sprintf(instrucao, "sra %s,%s,%s,%u", getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y), i);
+            fprintf(output, "0x%08X:\t%-25s\t%s:%s=%s:%s>>%u=0x%016lX,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(y), getRegisterBigger(z), getRegisterBigger(x), i + 1, tmpSra_1, R[31]);
+            printf("0x%08X:\t%-25s\t%s:%s=%s:%s>>%u=0x%016lX,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(y), getRegisterBigger(z), getRegisterBigger(x), i + 1, tmpSra_1, R[31]);
             break;  
 
 
@@ -1383,11 +1391,30 @@ int main(int argc, char *argv[]) {
         MEM32[R[30] >> 2] = R[29];
 
         //0x????????:	ret                      	PC=MEM[0x????????]=0x????????
-        sprintf(instrucao, "call");
+        sprintf(instrucao, "ret");
         fprintf(output, "0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, MEM32[sp >> 2]);
         printf("0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, MEM32[sp >> 2]);
         break;  
 
+
+    //reti
+      case 0b100000:
+
+        cr = R[26];
+        ipc = R[27];
+        pc = R[29];
+        sp = R[30];
+
+        R[30] = R[30] + 4, R[27] = MEM32[R[30] >> 2];
+        R[30] = R[30] + 4, R[26] = MEM32[R[30] >> 2];
+        R[30] = R[30] + 4, R[29] = MEM32[R[30] >> 2];
+
+        //reti 	
+        //IPC=MEM[0x????????]=0x????????,CR=MEM[0x????????]=0x????????,PC=MEM[0x????????]=0x????????
+        sprintf(instrucao, "reti");
+        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, R[27], sp, R[26], sp, R[29]);
+        printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, R[27], sp, R[26], sp, R[29]);
+        break; 
 
 
 
@@ -1616,6 +1643,7 @@ int main(int argc, char *argv[]) {
         printf("[INVALID INSTRUCTION @ 0x%08X]\n", R[29]);
         executa = 0;
         break;
+
 
     }
 
