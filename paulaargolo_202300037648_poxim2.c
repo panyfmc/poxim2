@@ -1421,10 +1421,26 @@ int main(int argc, char *argv[]) {
     // int
       case 0b111111:
 
-        executa = 0;
-        sprintf(instrucao, "int 0");
-        fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", R[29], instrucao);
-        printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", R[29], instrucao);
+        i = R[28] & 0x3FFFFFF;
+        cr = R[26];
+        ipc = R[27];
+        pc = R[29];
+        sp = R[30];
+        
+        if (i = 0) {
+          executa = 0;
+          sprintf(instrucao, "int 0");
+          fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", R[29], instrucao);
+          printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", R[29], instrucao);
+        } else {
+          R[26] = i;
+          R[27] = R[29];
+          R[29] = 0x0000000C;
+          sprintf(instrucao, "int %u", i);
+          fprintf(output, "0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", R[29], instrucao, R[27], R[29]);
+          printf("0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", R[29], instrucao, R[27], R[29]);
+        }
+        
         break;  
 
 
