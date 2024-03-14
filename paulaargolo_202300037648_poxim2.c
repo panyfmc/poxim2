@@ -116,9 +116,7 @@ uint32_t setRegistrador(uint32_t r, uint32_t valor) {
 
 //void writeInWatchdog(Watchdog* watchdog, uint8_t numberOfBytes, uint32_t value, uint32_t address);
 
-struct watchdog(uint32_t address, uint32_t value);
-
-  
+//struct watchdog(uint32_t address, uint32_t value);
 
 
 int main(int argc, char *argv[]) { 
@@ -1150,11 +1148,11 @@ int main(int argc, char *argv[]) {
       case 0b011101:
 
         z = (R[28] & (0b11111 << 21)) >> 21;
-        x = (R[28] & (0b11111 << 16)) >> 16;
+        x = (R[28] & (0b11111 << 16)) >> 16;  
         i = R[28] & 0xFFFF;  
 
-        R[z] = MEM32[R[x] + ExtendedBit15To32(i)]; 
-
+        R[z] = MEM32[R[x] + ExtendedBit15To32(i)];        
+               
 
         //0x????????:	s32 [rx+-s],rz           	MEM[0x????????]=Rz=0x???????? 
         sprintf(instrucao, "s32 [r%u%s%i],r%u", x, (i >= 0) ? ("+") : (""), i, z);
