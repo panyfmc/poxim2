@@ -112,11 +112,7 @@ uint32_t setRegistrador(uint32_t r, uint32_t valor) {
     return valor;
   }
 }
-
-
-//void writeInWatchdog(Watchdog* watchdog, uint8_t numberOfBytes, uint32_t value, uint32_t address);
-
-//struct watchdog(uint32_t address, uint32_t value);
+ 
 
 
 int main(int argc, char *argv[]) { 
@@ -125,6 +121,7 @@ int main(int argc, char *argv[]) {
   FILE *output = fopen(argv[2], "w");
 
   uint32_t R[32] = { 0 };
+  uint32_t watchdog = 0;
 
   uint8_t *MEM8 = (uint8_t*)(calloc(32, 1024));
   uint32_t *MEM32 = (uint32_t*)(calloc(32, 1024));
@@ -145,13 +142,34 @@ int main(int argc, char *argv[]) {
     char instrucao[30] = {0};
 
     uint8_t z = 0, x = 0, y = 0, v = 0, w = 0;
-    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0;
+    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, counter = 0;
     uint64_t tmpSla_1 = 0, tmpSll_1 = 0,tmpSra_1 = 0, tmpSrl_1 = 0, cmp1 = 0, cmpi1 = 0, tmpMul_1 = 0, tmpMuls_1 = 0, tmpAdd_1 = 0;
 
     R[28] = ((MEM8[R[29] + 0] << 24) | (MEM8[R[29] + 1] << 16) | (MEM8[R[29] + 2] << 8) | (MEM8[R[29] + 3] << 0)) | MEM32[R[29] >> 2];
 
     uint8_t opcode = (R[28] & (0b111111 << 26)) >> 26;
     uint8_t subcode = (R[28] & (0b111 << 8)) >> 8;
+
+
+
+      //watchdog
+      //10000000000000000000000000000000 AND ADDRESS OF WACTHDOG TRUE
+    if (0x80000000 & watchdog) {
+      //couter 0000000000000...001 and address -1 
+      counter = (0x7FFFFFFF & watchdog) - 1;
+      //address = 00000...001 and address or counter decrementado
+      watchdog = 0x80000000 & watchdog | counter;
+      if(counter == 0) {
+        //and IE (bit 1  in status register SR) 
+        if (R[31] & 0b10) {
+          watchdog = 0;
+          printf("[HARDWARE INTERRUPTION 1]\n");
+          MEM32[R[30]] = R[29] + 4, R[30] = R[30] - 4;
+          MEM32[R[30]] = R[26], R[30] = R[30] - 4;
+          MEM32[R[30]] = R[27], R[30] = R[30] - 4;
+        }
+      }
+    } 
 
 
     switch (opcode) 
@@ -1100,7 +1118,12 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16;
         i = R[28] & 0xFFFF;
         
-        R[z] = MEM32[R[x] + ExtendedBit15To32(i)]; 
+        //R[z] = MEM32[R[x] + ExtendedBit15To32(i)]; 
+        if  (R[x] + ExtendedBit15To32(i) == 0x20202020) {
+          R[z] = watchdog;
+        } else {
+          R[z] = MEM32[R[x] + ExtendedBit15To32(i)];
+        }
 
 
         sprintf(instrucao, "l32 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
@@ -1151,13 +1174,18 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16;  
         i = R[28] & 0xFFFF;  
 
-        R[z] = MEM32[R[x] + ExtendedBit15To32(i)];        
+       // R[z] = MEM32[R[x] + ExtendedBit15To32(i)];      
+        if  ((R[x] + ExtendedBit15To32(i)) == 0x20202020) {
+          watchdog = R[z];
+        } else {
+          MEM32[R[x] + ExtendedBit15To32(i)] = R[z];
+        }
                
 
         //0x????????:	s32 [rx+-s],rz           	MEM[0x????????]=Rz=0x???????? 
-        sprintf(instrucao, "s32 [r%u%s%i],r%u", x, (i >= 0) ? ("+") : (""), i, z);
-        fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]=R%u=0x%08X\n", R[29], instrucao, (R[x] + i) << 2, z, R[z]);
-        printf("0x%08X:\t%-25s\tMEM[0x%08X]=R%u=0x%08X\n", R[29], instrucao, (R[x] + i) << 2, z, R[z]);
+        sprintf(instrucao, "s32 [r%u%s%i],%s", x, (i >= 0) ? ("+") : (""), i, getRegisterSmaller(z));
+        fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]=%s=0x%08X\n", R[29], instrucao, (R[x] + i) << 2, getRegisterBigger(z), R[z]);
+        printf("0x%08X:\t%-25s\tMEM[0x%08X]=%s=0x%08X\n", R[29], instrucao, (R[x] + i) << 2, getRegisterBigger(z), R[z]);
         break;
 
 
@@ -1317,13 +1345,14 @@ int main(int argc, char *argv[]) {
         break;
 
 
-      // bun
+      // bun desvio incondicional
       case 0b110111:
 
         pc = R[29];
         i = R[28] & 0x3FFFFFF;
-        R[29] = R[29] + ((ExtendedBit25To32(i)) << 2); 
+        R[29] = R[29] + (ExtendedBit25To32(i) << 2);
 
+        
       //0x????????:	bun s                    	PC=0x????????
         sprintf(instrucao, "bun %i", i);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
