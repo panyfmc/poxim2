@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
     char instrucao[30] = {0};
 
     uint8_t z = 0, x = 0, y = 0, v = 0, w = 0;
-    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, counter = 0;
+    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, counter = 0, temp = 0;
     uint64_t tmpSla_1 = 0, tmpSll_1 = 0,tmpSra_1 = 0, tmpSrl_1 = 0, cmp1 = 0, cmpi1 = 0, tmpMul_1 = 0, tmpMuls_1 = 0, tmpAdd_1 = 0;
 
     R[28] = ((MEM8[R[29] + 0] << 24) | (MEM8[R[29] + 1] << 16) | (MEM8[R[29] + 2] << 8) | (MEM8[R[29] + 3] << 0)) | MEM32[R[29] >> 2];
@@ -1348,16 +1348,34 @@ int main(int argc, char *argv[]) {
       // bun desvio incondicional
       case 0b110111:
 
+        
         pc = R[29];
         i = R[28] & 0x3FFFFFF;
-        R[29] = R[29] + (ExtendedBit25To32(i) << 2);
+        temp = ExtendedBit25To32(i);
+        R[29] = R[29] + (temp << 2); 
 
-        
       //0x????????:	bun s                    	PC=0x????????
-        sprintf(instrucao, "bun %i", i);
+        sprintf(instrucao, "bun %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;
+
+
+
+        //pc = R[29];
+        //ExtendedBit25To32(R[28] & 0x3FFFFFF);
+       
+
+				// Execucao do comportamento
+				//R[29] = R[29] + (0xFC000000 | (R[28] & 0x3FFFFFF) << 2);		
+
+          //11111100000000000000000000000000 | 00000011111111111111111111111111
+        
+      //0x????????:	bun s                    	PC=0x????????
+        //sprintf(instrucao, "bun %i", i);
+        //fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
+        //printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
+       // break;
 
 
       //bzd
@@ -1395,6 +1413,7 @@ int main(int argc, char *argv[]) {
 
         sp = R[30];
         pc = R[29];
+        
 
         MEM32[R[30] >> 2] = R[29] + 4;  //armazena pc + 4 na memória, em uma posição
         R[30] = R[30] - 4;              //determinada pelo valor de sp dividido por 4.
