@@ -15,16 +15,32 @@ void verifyZero(uint32_t reg, uint32_t teste, uint64_t temp) {
   } 
 }
 
-int checkBit32(uint32_t reg, int BitPosition) {
-  uint32_t mask = 1u << BitPosition;
-  return (reg & mask) != 0;
+
+//verificar um bit  -- value: valor a verificar -- bitPosition: A posição do bit (0 a 31).
+// 1 se o bit estiver definido -- 0 se o bit estiver desligado -- -1 se bitPosition for inválido.
+int checkBit32(uint32_t value, int bitPosition) {
+    // Verifica se bitPosition é inválido (negativo OU maior que 31)
+    if (bitPosition < 0 || bitPosition > 31) {
+        return -1; // Valor inválido
+    }
+    // Cria uma máscara para isolar o bit
+    uint32_t mask = 1u << bitPosition;
+    // Aplica a máscara e verifica se o bit é 0 ou 1
+    return (value & mask) != 0;
 }
 
 
-int checkBit64(uint64_t reg, int BitPosition) {
-  uint64_t mask = 1ull << BitPosition;
-  return (reg & mask) != 0;
+int checkBit64(uint64_t value2, int bitPosition2) {
+    if (bitPosition2 < 0 || bitPosition2 > 63) {
+        return -1; // Valor inválido
+    }
+    // Cria uma máscara para isolar o bit
+    uint32_t mask2 = 1u << bitPosition2;
+    // Aplica a máscara e verifica se o bit é 0 ou 1
+    return (value2 & mask2) != 0;
 }
+
+
 
 uint32_t ExtensaoBit21To32(uint32_t hexa) {
   if (checkBit32(hexa, 20)) {
@@ -112,6 +128,38 @@ uint32_t setRegistrador(uint32_t r, uint32_t valor) {
     return valor;
   }
 }
+
+
+bool bitZN(uint32_t R) {
+  // if checkBit32 is 0 or 1
+  return checkBit32(R, 6);
+}
+
+
+// ZD 5
+bool bitZD(uint32_t R) {
+  return checkBit32(R, 5);
+}
+
+// SN 4
+bool bitSN(uint32_t R) {
+  return checkBit32(R, 4);
+}
+
+// OV 3
+bool bitOV(uint32_t R) {
+  return checkBit32(R, 3);
+}
+
+// IV 2
+bool bitIV(uint32_t R) {
+  return checkBit32(R, 2);
+}
+
+// CY 0
+bool bitCY(uint32_t R) {
+  return checkBit32(R, 0);
+}
  
 
 
@@ -164,9 +212,9 @@ int main(int argc, char *argv[]) {
         if (R[31] & 0b10) {
           watchdog = 0;
           printf("[HARDWARE INTERRUPTION 1]\n");
-          fprintf(output,"[HARDWARE INTERRUPTION 1]\n");
+          fprintf(output, "[HARDWARE INTERRUPTION 1]\n");
           R[26] = 0xE1AC04DA;
-          R[27] = R[29] + 4;
+          R[27] = R[29];
           MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
@@ -174,7 +222,7 @@ int main(int argc, char *argv[]) {
   
           continue;
         }
-      }
+      }  
     } 
 
 
@@ -1199,9 +1247,17 @@ int main(int argc, char *argv[]) {
       case 0b101010:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "bae %i", R[28] & 0x3FFFFFF);
+        // cy = 0
+        if ((bitCY(R[31])) == 0) {
+          R[29] = R[29] + (temp << 2);
+        } else {
+          R[29] = R[29];
+        }
+
+        sprintf(instrucao, "bae %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;
@@ -1211,9 +1267,17 @@ int main(int argc, char *argv[]) {
       case 0b101011:  
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "bat %i", R[28] & 0x3FFFFFF);
+        // zn = 0 ^ cy = 0
+        if (((bitZN(R[31])) == 0) && ((bitCY(R[31])) == 0)) {
+          R[29] = R[29] + (temp << 2);
+        } else {
+          R[29] = R[29];
+        }
+
+        sprintf(instrucao, "bat %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;
@@ -1223,9 +1287,17 @@ int main(int argc, char *argv[]) {
       case 0b101100:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "bbe %i", R[28] & 0x3FFFFFF);
+        //zn = 1 v cy = 1
+        if (((bitZN(R[31])) != 0) || ((bitCY(R[31])) != 0)) {
+          R[29] = R[29] + (temp << 2);
+        } else {
+          R[29] = R[29];
+        }
+
+        sprintf(instrucao, "bbe %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;
@@ -1235,9 +1307,17 @@ int main(int argc, char *argv[]) {
       case 0b101101:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "bbt %i", R[28] & 0x3FFFFFF);
+        // cy = 1
+        if ((bitCY(R[31])) != 0) {
+          R[29] = R[29] + (temp << 2);
+        } else {
+          R[29] = R[29];
+        }
+
+        sprintf(instrucao, "bbt %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;  
@@ -1247,9 +1327,18 @@ int main(int argc, char *argv[]) {
       case 0b101110:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "beq %i", R[28] & 0x3FFFFFF);
+
+        // zn = 1
+        if ((bitZN(R[31])) != 0) {
+          R[29] = R[29] + (temp << 2);
+        } else {
+          R[29] = R[29];
+        }
+
+        sprintf(instrucao, "beq %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;  
@@ -1259,9 +1348,17 @@ int main(int argc, char *argv[]) {
       case 0b101111:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "bge %i", R[28] & 0x3FFFFFF);
+        // sn = ov
+        if ((bitSN(R[31])) == (bitOV(R[31]))) {
+          R[29] = R[29] + (temp << 2);
+        } else {
+          R[29] = R[29];
+        }
+
+        sprintf(instrucao, "bge %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;  
@@ -1271,9 +1368,18 @@ int main(int argc, char *argv[]) {
       case 0b110000:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "bgt %i", R[28] & 0x3FFFFFF);
+        // ZN = 0 ^ SN = OV
+        if (((bitZN(R[31])) == 0) && ((bitSN(R[31])) == (bitOV(R[31])))) {
+          R[29] = R[29] + (temp << 2);
+        } else {
+          R[29] = R[29];
+        }
+
+
+        sprintf(instrucao, "bgt %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;  
@@ -1283,9 +1389,12 @@ int main(int argc, char *argv[]) {
       case 0b110001:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "biv %i", R[28] & 0x3FFFFFF);
+        R[29] = R[29] + (temp << 2);
+
+        sprintf(instrucao, "biv %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;  
@@ -1295,9 +1404,17 @@ int main(int argc, char *argv[]) {
       case 0b110010:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "ble %i", R[28] & 0x3FFFFFF);
+        // ZN = 1 v SN != OV
+        if (((bitZN(R[31])) != 0) || ((bitSN(R[31])) != (bitOV(R[31])))) {
+          R[29] = R[29] + (temp << 2);
+        } else {
+          R[29] = R[29];
+        }
+
+        sprintf(instrucao, "ble %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break; 
@@ -1307,9 +1424,17 @@ int main(int argc, char *argv[]) {
       case 0b110011:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "blt %i", R[28] & 0x3FFFFFF);
+        // SN != OV
+        if ((bitSN(R[31])) != (bitOV(R[31]))) {
+          R[29] = R[29] + (temp << 2);
+        } else {
+          R[29] = R[29];
+        }
+
+        sprintf(instrucao, "blt %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;   
@@ -1319,10 +1444,26 @@ int main(int argc, char *argv[]) {
       case 0b110100:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "bne %i", R[28] & 0x3FFFFFF);
-        fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
+        printf("bneee 0x%08X\n", checkBit32(R[31], 6));
+
+        // zn = 0
+        if (bitZN(R[31]) == 0) {
+          R[29] = R[29];          
+        } else {
+          R[29] = R[29] + (temp << 2);
+        }
+        
+        //if (checkBit32(R[31], 7) == 0) {
+          //R[29] = R[29];
+        //} else {
+          //R[29] = R[29] + (temp << 2);
+        //}
+
+        sprintf(instrucao, "bne %i", temp);
+        fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29]);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;  
 
@@ -1331,9 +1472,17 @@ int main(int argc, char *argv[]) {
       case 0b110101:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "bni %i", R[28] & 0x3FFFFFF);
+        // iv = 0
+        if ((bitIV(R[31])) == 0) {
+          R[29] = R[29] + (temp << 2);
+        } else {
+          R[29] = R[29];
+        }
+
+        sprintf(instrucao, "bni %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;  
@@ -1343,9 +1492,17 @@ int main(int argc, char *argv[]) {
       case 0b110110:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "bnz %i", R[28] & 0x3FFFFFF);
+        // zd = 0
+        if ((bitZD(R[31])) == 0) {
+          R[29] = R[29] + (temp << 2);
+        } else {
+          R[29] = R[29];
+        }
+
+        sprintf(instrucao, "bnz %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;
@@ -1367,30 +1524,16 @@ int main(int argc, char *argv[]) {
         break;
 
 
-
-        //pc = R[29];
-        //ExtendedBit25To32(R[28] & 0x3FFFFFF);
-       
-
-				// Execucao do comportamento
-				//R[29] = R[29] + (0xFC000000 | (R[28] & 0x3FFFFFF) << 2);		
-
-          //11111100000000000000000000000000 | 00000011111111111111111111111111
-        
-      //0x????????:	bun s                    	PC=0x????????
-        //sprintf(instrucao, "bun %i", i);
-        //fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
-        //printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
-       // break;
-
-
       //bzd
       case 0b111000:
 
         pc = R[29];
-        R[29] = R[29] + ((R[28] & 0x3FFFFFF) << 2);
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
 
-        sprintf(instrucao, "bzd %i", R[28] & 0x3FFFFFF);
+        R[29] = R[29] + (temp << 2); 
+
+        sprintf(instrucao, "bzd %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;
