@@ -1450,7 +1450,7 @@ int main(int argc, char *argv[]) {
         i = R[28] & 0x3FFFFFF;
         temp = ExtendedBit25To32(i);
 
-        //printf("bneee 0x%08X\n", checkBit32(R[31], 6));
+        printf("bneee %d\n", checkBit32(R[31], 6));
 
         // zn = 0
         //if (bitZN(R[31]) == 0) {
@@ -1459,14 +1459,13 @@ int main(int argc, char *argv[]) {
          // R[29] = R[29] + (temp << 2);
        // }
         
-        if (checkBit32(R[31], 6) == 0) {
-          R[29] = R[29];
-        } else {
+        if (bitZN(R[31]) == 0) {
           R[29] = R[29] + (temp << 2);
+          R[29] -= 4;
         }
 
         sprintf(instrucao, "bne %i", temp);
-        fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29]);
+        fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         printf("0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
         break;  
 
@@ -1625,19 +1624,21 @@ int main(int argc, char *argv[]) {
         pc = R[29];
         sp = R[30];
         
-        if (i = 0) {
+        if (i == 0) {
           executa = 0;
-          sprintf(instrucao, "int 0");
-          fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", R[29], instrucao);
-          printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", R[29], instrucao);
+          R[29] = 0 - 4;
+          R[26] = 0; 
+          // sprintf(instrucao, "int 0");
+          // fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", R[29], instrucao);
+          // printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", R[29], instrucao);
         } else {
           R[26] = i;
           R[27] = R[29];
-          R[29] = 0x0000000C;
-          sprintf(instrucao, "int %u", i);
-          fprintf(output, "0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", R[29], instrucao, R[27], R[29]);
-          printf("0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", R[29], instrucao, R[27], R[29]);
+          R[29] = 0x0000000C - 4;
         }
+        sprintf(instrucao, "int %d", i);
+        fprintf(output, "0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", pc, instrucao, R[26], R[29] + 4);
+        printf("0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", pc, instrucao, R[26], R[29] + 4);
         
         break;  
 
