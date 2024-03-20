@@ -88,6 +88,7 @@ char *getRegisterSmaller(uint32_t reg) {
   return result;
 }
 
+
 char *getRegisterBigger(uint32_t reg) {
   char *result;
   if (reg == 28) {
@@ -243,6 +244,7 @@ int main(int argc, char *argv[]) {
         printf("0x%08X:\t%-25s\t%s=0x%08X\n", R[29], instrucao, getRegisterBigger(z), xyl);
         break;
 
+
     // movs (tipe U)
       case 0b000001:
         pc = R[29];
@@ -253,10 +255,11 @@ int main(int argc, char *argv[]) {
         R[z] = ExtensaoBit21To32(xyl);
 
       //0x????????:	movs rz,s                	Rz=0x????????
-        sprintf(instrucao, "movs r%u,%i", z, R[z]);
-        fprintf(output, "0x%08X:\t%-25s\tR%u=0x%08X\n", pc, instrucao, z, R[z]);
-        printf("0x%08X:\t%-25s\tR%u=0x%08X\n", pc, instrucao, z, R[z]);
+        sprintf(instrucao, "movs %s,%i", getRegisterSmaller(z), R[z]);
+        fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", pc, instrucao, getRegisterBigger(z), R[z]);
+        printf("0x%08X:\t%-25s\t%s=0x%08X\n", pc, instrucao, getRegisterBigger(z), R[z]);
         break;
+        
 
       // add (tipe U)
       case 0b000010:
@@ -1447,20 +1450,20 @@ int main(int argc, char *argv[]) {
         i = R[28] & 0x3FFFFFF;
         temp = ExtendedBit25To32(i);
 
-        printf("bneee 0x%08X\n", checkBit32(R[31], 6));
+        //printf("bneee 0x%08X\n", checkBit32(R[31], 6));
 
         // zn = 0
-        if (bitZN(R[31]) == 0) {
-          R[29] = R[29];          
+        //if (bitZN(R[31]) == 0) {
+          //R[29] = R[29];          
+        //} else {
+         // R[29] = R[29] + (temp << 2);
+       // }
+        
+        if (checkBit32(R[31], 6) == 0) {
+          R[29] = R[29];
         } else {
           R[29] = R[29] + (temp << 2);
         }
-        
-        //if (checkBit32(R[31], 7) == 0) {
-          //R[29] = R[29];
-        //} else {
-          //R[29] = R[29] + (temp << 2);
-        //}
 
         sprintf(instrucao, "bne %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29]);
