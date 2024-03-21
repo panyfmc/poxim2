@@ -42,11 +42,11 @@ int checkBit64(uint64_t value2, int bitPosition2) {
 
 
 
-uint32_t ExtensaoBit21To32(uint32_t hexa) {
-  if (checkBit32(hexa, 20)) {
-    return hexa | 0xFFF00000;
+uint32_t ExtensaoBit21To32(uint32_t hex) {
+  if (checkBit32(hex, 20)) {
+    return hex | 0xFFF00000;
   } else {
-    return hexa;
+    return hex;
   }
 }
 
@@ -220,8 +220,6 @@ int main(int argc, char *argv[]) {
           MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
           R[29] = 0x00000010;
-  
-          continue;
         }
       }  
     } 
@@ -1636,9 +1634,19 @@ int main(int argc, char *argv[]) {
           R[27] = R[29];
           R[29] = 0x0000000C - 4;
         }
+
         sprintf(instrucao, "int %d", i);
         fprintf(output, "0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", pc, instrucao, R[26], R[29] + 4);
         printf("0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", pc, instrucao, R[26], R[29] + 4);
+
+        if (i != 0) {
+          printf("[SOFTWARE INTERRUPTION]\n");
+          fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+          MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
+          MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
+          MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
+          //R[29] = 0x00000010;
+        }
         
         break;  
 
