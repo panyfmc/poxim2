@@ -1259,7 +1259,7 @@ int main(int argc, char *argv[]) {
         // cy = 0
         if (bitCY(R[31]) == 0) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         } 
 
         sprintf(instrucao, "bae %i", temp);
@@ -1278,7 +1278,7 @@ int main(int argc, char *argv[]) {
         // zn = 0 ^ cy = 0
         if (((bitZN(R[31])) == 0) && ((bitCY(R[31])) == 0)) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         } 
 
         sprintf(instrucao, "bat %i", temp);
@@ -1297,7 +1297,7 @@ int main(int argc, char *argv[]) {
         //zn = 1 v cy = 1
         if (((bitZN(R[31])) != 0) || ((bitCY(R[31])) != 0)) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         } 
 
         sprintf(instrucao, "bbe %i", temp);
@@ -1316,7 +1316,7 @@ int main(int argc, char *argv[]) {
         // cy = 1
         if ((bitCY(R[31])) != 0) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         } 
 
         sprintf(instrucao, "bbt %i", temp);
@@ -1336,7 +1336,7 @@ int main(int argc, char *argv[]) {
         // zn = 1
         if ((bitZN(R[31])) != 0) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         } 
 
         sprintf(instrucao, "beq %i", temp);
@@ -1355,7 +1355,7 @@ int main(int argc, char *argv[]) {
         // sn = ov
         if ((bitSN(R[31])) == (bitOV(R[31]))) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         } 
 
         sprintf(instrucao, "bge %i", temp);
@@ -1374,7 +1374,7 @@ int main(int argc, char *argv[]) {
         // ZN = 0 ^ SN = OV
         if (((bitZN(R[31])) == 0) && ((bitSN(R[31])) == (bitOV(R[31])))) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         } 
 
         sprintf(instrucao, "bgt %i", temp);
@@ -1393,7 +1393,7 @@ int main(int argc, char *argv[]) {
         // IV = 1   
         if (bitIV(R[31]) != 0) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         }
 
         sprintf(instrucao, "biv %i", temp);
@@ -1412,7 +1412,7 @@ int main(int argc, char *argv[]) {
         // ZN = 1 v SN != OV
         if (((bitZN(R[31])) != 0) || ((bitSN(R[31])) != (bitOV(R[31])))) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         } 
 
         sprintf(instrucao, "ble %i", temp);
@@ -1431,7 +1431,7 @@ int main(int argc, char *argv[]) {
         // SN != OV
         if ((bitSN(R[31])) != (bitOV(R[31]))) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         } 
 
         sprintf(instrucao, "blt %i", temp);
@@ -1452,7 +1452,7 @@ int main(int argc, char *argv[]) {
         // zn = 0
         if (bitZN(R[31]) == 0) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         }
 
         sprintf(instrucao, "bne %i", temp);
@@ -1471,7 +1471,7 @@ int main(int argc, char *argv[]) {
         // iv = 0
         if ((bitIV(R[31])) == 0) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         } 
 
         sprintf(instrucao, "bni %i", temp);
@@ -1490,7 +1490,7 @@ int main(int argc, char *argv[]) {
         // zd = 0
         if ((bitZD(R[31])) == 0) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         } 
 
         sprintf(instrucao, "bnz %i", temp);
@@ -1527,7 +1527,7 @@ int main(int argc, char *argv[]) {
         //ZD = 1
         if (bitZD(R[31]) != 0) {
           R[29] = R[29] + (temp << 2);
-          R[29] -= 4;
+          //R[29] -= 4;
         }
 
         sprintf(instrucao, "bzd %i", temp);
@@ -1546,7 +1546,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit15To32(i);
 
         R[29] = (R[x] + temp);
-        //R[29] -= 4;
+        R[29] -= 4;
         
 
         //0x????????:	call [rx+-s]             	PC=0x????????,MEM[0x????????]=0x????????  
