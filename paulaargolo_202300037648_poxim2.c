@@ -41,7 +41,6 @@ int checkBit64(uint64_t value2, int bitPosition2) {
 }
 
 
-
 uint32_t ExtensaoBit21To32(uint32_t hex) {
   if (checkBit32(hex, 20)) {
     return hex | 0xFFF00000;
@@ -65,6 +64,7 @@ uint32_t ExtendedBit25To32(uint32_t hex) {
     return hex;
   }
 }
+
 
 
 char *getRegisterSmaller(uint32_t reg) {
@@ -204,11 +204,7 @@ int main(int argc, char *argv[]) {
 
       //10000000000000000000000000000000 AND ADDRESS OF WACTHDOG TRUE
     if (0x80000000 & watchdog) {
-      //couter 0000000000000...001 and address -1 
-      counter = (0x7FFFFFFF & watchdog) - 1;
-      //address = 00000...001 and address or counter == 0
-      watchdog = 0x80000000 & watchdog | counter;
-      if(counter == 0) {
+       if(counter == 0) {
         //and IE (bit 1  in status register SR) 
         if (R[31] & 0b10) {
           watchdog = 0;
@@ -220,9 +216,19 @@ int main(int argc, char *argv[]) {
           MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
           R[29] = 0x00000010;
+
+          continue;
         }
       }  
-    } 
+      //couter 0000000000000...001 and address -1 
+      counter = (0x7FFFFFFF & watchdog) - 1;
+      //address = 00000...001 and address or counter == 0
+      watchdog = 0x80000000 & watchdog | counter;
+       
+    }
+    // if (R[31] & 0b10) && watchdog_pending
+    //     watchdog_pending = 0
+    //     gerar_interrupção 
 
 
 
@@ -1607,8 +1613,8 @@ int main(int argc, char *argv[]) {
         //reti 	
         //IPC=MEM[0x????????]=0x????????,CR=MEM[0x????????]=0x????????,PC=MEM[0x????????]=0x????????
         sprintf(instrucao, "reti");
-        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, R[27], sp, R[26], sp, R[29]);
-        printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, R[27], sp, R[26], sp, R[29]);
+        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, R[27], R[30], R[26], R[30], R[29]);
+        printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, R[27], R[30], R[26], R[30], R[29]);
         break; 
 
 
