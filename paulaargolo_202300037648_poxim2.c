@@ -227,6 +227,9 @@ int main(int argc, char *argv[]) {
     } 
 
 
+
+
+
     switch (opcode) 
     {
 
@@ -1254,11 +1257,10 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         // cy = 0
-        if ((bitCY(R[31])) == 0) {
+        if (bitCY(R[31]) == 0) {
           R[29] = R[29] + (temp << 2);
-        } else {
-          R[29] = R[29];
-        }
+          R[29] -= 4;
+        } 
 
         sprintf(instrucao, "bae %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
@@ -1450,15 +1452,9 @@ int main(int argc, char *argv[]) {
         i = R[28] & 0x3FFFFFF;
         temp = ExtendedBit25To32(i);
 
-        printf("bneee %d\n", checkBit32(R[31], 6));
+        //printf("bneee %d\n", checkBit32(R[31], 6));
 
         // zn = 0
-        //if (bitZN(R[31]) == 0) {
-          //R[29] = R[29];          
-        //} else {
-         // R[29] = R[29] + (temp << 2);
-       // }
-        
         if (bitZN(R[31]) == 0) {
           R[29] = R[29] + (temp << 2);
           R[29] -= 4;
@@ -1517,7 +1513,9 @@ int main(int argc, char *argv[]) {
         pc = R[29];
         i = R[28] & 0x3FFFFFF;
         temp = ExtendedBit25To32(i);
+
         R[29] = R[29] + (temp << 2); 
+        //R[29] -= 4;
 
       //0x????????:	bun s                    	PC=0x????????
         sprintf(instrucao, "bun %i", temp);
@@ -1548,12 +1546,14 @@ int main(int argc, char *argv[]) {
         sp = R[30];
         x = (R[28] & (0b11111 << 16)) >> 16;
         i = R[28] & 0xFFFF;
+        temp = ExtendedBit15To32(i);
 
-        pc = (R[x] + ExtendedBit15To32(i));
+        R[29] = (R[x] + temp);
+        R[29] -= 4;
         
 
         //0x????????:	call [rx+-s]             	PC=0x????????,MEM[0x????????]=0x????????  
-        sprintf(instrucao, "call [r%u%s%i]", x, (i >= 0) ? ("+") : (""), i);
+        sprintf(instrucao, "call [r%u%s%i]", x, (i >= 0) ? ("+") : (""), temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", pc, instrucao, R[29] + 4, sp, MEM32[sp >> 2]);
         printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", pc, instrucao, R[29] + 4, sp, MEM32[sp >> 2]);
 
@@ -1564,15 +1564,18 @@ int main(int argc, char *argv[]) {
 
         sp = R[30];
         pc = R[29];
-        
+        i = R[28] & 0x3FFFFFF;
+        temp = ExtendedBit25To32(i);
+
 
         MEM32[R[30] >> 2] = R[29] + 4;  //armazena pc + 4 na memória, em uma posição
         R[30] = R[30] - 4;              //determinada pelo valor de sp dividido por 4.
-        R[29] = R[29] + (ExtendedBit25To32(R[28] & 0x3FFFFFF) << 2); 
+        R[29] = R[29] + (temp << 2); 
+        R[29] -= 4;
         
 
         //0x????????:	call s                   	PC=0x????????,MEM[0x????????]=0x????????
-        sprintf(instrucao, "call %i", ExtendedBit25To32(R[28] & 0x3FFFFFF) << 2);
+        sprintf(instrucao, "call %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", pc, instrucao, R[29] + 4, sp, MEM32[sp >> 2]);
         printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", pc, instrucao, R[29] + 4, sp, MEM32[sp >> 2]);
         break;  
