@@ -1546,7 +1546,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit15To32(i);
 
         R[29] = (R[x] + temp);
-        R[29] -= 4;
+        //R[29] -= 4;
         
 
         //0x????????:	call [rx+-s]             	PC=0x????????,MEM[0x????????]=0x????????  
@@ -1568,7 +1568,7 @@ int main(int argc, char *argv[]) {
         MEM32[R[30] >> 2] = R[29] + 4;  //armazena pc + 4 na memória, em uma posição
         R[30] = R[30] - 4;              //determinada pelo valor de sp dividido por 4.
         R[29] = R[29] + (temp << 2); 
-        R[29] -= 4;
+        //R[29] -= 4;
         
 
         //0x????????:	call s                   	PC=0x????????,MEM[0x????????]=0x????????
