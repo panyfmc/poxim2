@@ -170,7 +170,8 @@ int main(int argc, char *argv[]) {
   FILE *output = fopen(argv[2], "w");
 
   uint32_t R[32] = { 0 };
-  uint32_t watchdog = 0;
+  uint32_t watchdog = 0, counter = 0;
+  bool watchdog_pending = false;
 
   uint8_t *MEM8 = (uint8_t*)(calloc(32, 1024));
   uint32_t *MEM32 = (uint32_t*)(calloc(32, 1024));
@@ -191,7 +192,7 @@ int main(int argc, char *argv[]) {
     char instrucao[30] = {0};
 
     uint8_t z = 0, x = 0, y = 0, v = 0, w = 0;
-    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, counter = 0, temp = 0, hardwareValue = 0;
+    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, hardwareValue = 0;
     uint64_t tmpSla_1 = 0, tmpSll_1 = 0,tmpSra_1 = 0, tmpSrl_1 = 0, cmp1 = 0, cmpi1 = 0, tmpMul_1 = 0, tmpMuls_1 = 0, tmpAdd_1 = 0;
 
     R[28] = ((MEM8[R[29] + 0] << 24) | (MEM8[R[29] + 1] << 16) | (MEM8[R[29] + 2] << 8) | (MEM8[R[29] + 3] << 0)) | MEM32[R[29] >> 2];
@@ -205,6 +206,7 @@ int main(int argc, char *argv[]) {
       //10000000000000000000000000000000 AND ADDRESS OF WACTHDOG TRUE
     if (0x80000000 & watchdog) {
        if(counter == 0) {
+         watchdog_pending = true;
         //and IE (bit 1  in status register SR) 
         if (R[31] & 0b10) {
           watchdog = 0;
@@ -216,21 +218,21 @@ int main(int argc, char *argv[]) {
           MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
           R[29] = 0x00000010;
-
+          watchdog_pending = false;
           continue;
         }
-      }  
+      } else {
+        counter -= 1;
+        watchdog -= 1;
+      }
       //couter 0000000000000...001 and address -1 
-      counter = (0x7FFFFFFF & watchdog) - 1;
+      //counter = (0x7FFFFFFF & watchdog) - 1;
       //address = 00000...001 and address or counter == 0
-      watchdog = 0x80000000 & watchdog | counter;
-       
+      //watchdog = 0x80000000 & watchdog | counter;
     }
     // if (R[31] & 0b10) && watchdog_pending
     //     watchdog_pending = 0
     //     gerar_interrupção 
-
-
 
 
 
@@ -1241,6 +1243,8 @@ int main(int argc, char *argv[]) {
        // R[z] = MEM32[R[x] + ExtendedBit15To32(i)];      
         if  ((R[x] + ExtendedBit15To32(i)) == 0x20202020) {
           watchdog = R[z];
+          counter = (0x7FFFFFFF & watchdog);
+          printf("Counter: %d\n", counter);
         } else {
           MEM32[R[x] + ExtendedBit15To32(i)] = R[z];
         }
