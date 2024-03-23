@@ -41,7 +41,7 @@ int checkBit64(uint64_t value2, int bitPosition2) {
 }
 
 
-uint32_t ExtensaoBit21To32(uint32_t hex) {
+uint32_t ExtendedBit21To32(uint32_t hex) {
   if (checkBit32(hex, 20)) {
     return hex | 0xFFF00000;
   } else {
@@ -64,7 +64,6 @@ uint32_t ExtendedBit25To32(uint32_t hex) {
     return hex;
   }
 }
-
 
 
 char *getRegisterSmaller(uint32_t reg) {
@@ -161,7 +160,6 @@ bool bitIV(uint32_t R) {
 bool bitCY(uint32_t R) {
   return checkBit32(R, 0);
 }
- 
 
 
 int main(int argc, char *argv[]) { 
@@ -170,8 +168,11 @@ int main(int argc, char *argv[]) {
   FILE *output = fopen(argv[2], "w");
 
   uint32_t R[32] = { 0 };
+
+  //WATCHDOG 
   uint32_t watchdog = 0, counter = 0;
   bool watchdog_pending = false;
+
 
   uint8_t *MEM8 = (uint8_t*)(calloc(32, 1024));
   uint32_t *MEM32 = (uint32_t*)(calloc(32, 1024));
@@ -225,20 +226,12 @@ int main(int argc, char *argv[]) {
         counter -= 1;
         watchdog -= 1;
       }
-      //couter 0000000000000...001 and address -1 
-      //counter = (0x7FFFFFFF & watchdog) - 1;
-      //address = 00000...001 and address or counter == 0
-      //watchdog = 0x80000000 & watchdog | counter;
+      
     }
-    // if (R[31] & 0b10) && watchdog_pending
-    //     watchdog_pending = 0
-    //     gerar_interrupção 
-
-
+    
 
     switch (opcode) 
     {
-
       // mov (tipe U)
       case 0b000000:
         pc = R[29];
@@ -261,7 +254,8 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 21;
         y = (R[28] & (0b11111 << 11)) >> 11;
         xyl = R[28] & 0x1FFFFF;
-        R[z] = ExtensaoBit21To32(xyl);
+
+        R[z] = ExtendedBit21To32(xyl);
 
       //0x????????:	movs rz,s                	Rz=0x????????
         sprintf(instrucao, "movs %s,%i", getRegisterSmaller(z), R[z]);
