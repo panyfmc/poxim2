@@ -272,8 +272,8 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16;
         y = (R[28] & (0b11111 << 11)) >> 11;
 
-        tmpAdd_1 = (uint64_t)(R[x]) + (uint64_t)(R[y]);
-        R[z] = tmpAdd_1;
+        //tmpAdd_1 = extendTo64(R[z]);
+        tmpAdd_1 = extendTo64(R[x]) + extendTo64(R[y]);
 
         //zn rz = 0
         if (tmpAdd_1 != 0) {
@@ -290,7 +290,7 @@ int main(int argc, char *argv[]) {
         }
 
         //ov
-        if ((checkBit64(tmpAdd_1, 31) == checkBit64(R[y], 31)) && (checkBit64(tmpAdd_1, 31) != checkBit64(R[x], 31))) {
+        if (checkBit64(R[x], 31) == checkBit64(R[y], 31) && checkBit64(tmpAdd_1, 31) != checkBit64(R[x], 31)) {
           R[31] = R[31] | 0b1000;
         } else {
             R[31] = R[31] & ~0b1000;
@@ -306,8 +306,8 @@ int main(int argc, char *argv[]) {
 
       // 0x????????:	add rz,rx,ir Rz=Rx+IR=0x????????,SR=0x????????
         sprintf(instrucao, "add %s,%s,%s", getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
-        fprintf(output, "0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-        printf("0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+        fprintf(output, "0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), tmpAdd_1, R[31]);
+        printf("0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), tmpAdd_1, R[31]);
         break;
 
 
@@ -632,13 +632,9 @@ int main(int argc, char *argv[]) {
             x = (R[28] & (0b11111 << 16)) >> 16;
             y = (R[28] & (0b11111 << 11)) >> 11;
 
-            //printf("ry = 0x%016X\n", R[y]);
-
             // R[z]:R[x]=(R[z]:R[y])*(2(l + 1))
             tmpSra_1 = (extendTo64(R[z]) | extendTo64(R[y]));
             tmpSra_1 = (tmpSra_1 >> (i + 1));
-            
-            //printf("sra = 0x%016lX\n", tmpSra_1);
 
             R[x] = (uint32_t)setRegistrador(x, (tmpSra_1) & 0xFFFFFFFF);
             R[z] = (uint32_t)setRegistrador(z, (tmpSra_1 >> 32) & 0xFFFFFFFF);
@@ -1160,7 +1156,6 @@ int main(int argc, char *argv[]) {
         uint32_t addr1 = R[x] + i;
 
         uint32_t shift1 = (16 * (1 - (addr1 % 2))); 
-
         R[z] = ((MEM32[addr1 >> 1]) & (0xFFFF << (shift1))) >> shift1; 
 
 
@@ -1219,7 +1214,6 @@ int main(int argc, char *argv[]) {
         R[z] = (((0xFFFF << (shift1))) >> shift1) & (MEM32[addr1 >> 1]); 
 
 
-
       //0x????????:	s16 [rx+-s],rz           	//MEM[0x????????]=Rz=0x????
         sprintf(instrucao, "s16 [r%u%s%i],r%u", x, (i >= 0) ? ("+") : (""), i, z);
         fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]=R%u=0x%04X\n", R[29], instrucao, (R[x] + i) << 1, z, R[z]);
@@ -1238,7 +1232,6 @@ int main(int argc, char *argv[]) {
         if  ((R[x] + ExtendedBit15To32(i)) == 0x20202020) {
           watchdog = R[z];
           counter = (0x7FFFFFFF & watchdog);
-          printf("Counter: %d\n", counter);
         } else {
           MEM32[R[x] + ExtendedBit15To32(i)] = R[z];
         }
@@ -1570,7 +1563,6 @@ int main(int argc, char *argv[]) {
         MEM32[R[30] >> 2] = R[29] + 4;  //armazena pc + 4 na memória, em uma posição
         R[30] = R[30] - 4;              //determinada pelo valor de sp dividido por 4.
         R[29] = R[29] + (temp << 2); 
-        //R[29] -= 4;
         
 
         //0x????????:	call s                   	PC=0x????????,MEM[0x????????]=0x????????
@@ -1630,9 +1622,7 @@ int main(int argc, char *argv[]) {
           executa = 0;
           R[29] = 0 - 4;
           R[26] = 0; 
-          // sprintf(instrucao, "int 0");
-          // fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", R[29], instrucao);
-          // printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", R[29], instrucao);
+          
         } else {
           R[26] = i;
           R[27] = R[29];
