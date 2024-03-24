@@ -273,41 +273,33 @@ int main(int argc, char *argv[]) {
         y = (R[28] & (0b11111 << 11)) >> 11;
 
         //tmpAdd_1 = extendTo64(R[z]);
-        tmpAdd_1 = extendTo64(R[x]) + extendTo64(R[y]);
+        R[z] = R[x] + R[y];
 
         //zn rz = 0
-        if (tmpAdd_1 != 0) {
-          R[31] = R[31] & ~0b1000000;
-        } else {
+        if (R[z] == 0) {
           R[31] = R[31] | 0b1000000;
-        }
+        } 
 
         //sn rz31 = 1
-        if ((checkBit64(tmpAdd_1, 31)) != 0) {
+        if (checkBit64(R[z], 31) != 0) {
           R[31] = R[31] | 0b10000;
-        } else {
-          R[31] = R[31] & ~0b10000;
-        }
+        } 
 
         //ov
-        if (checkBit64(R[x], 31) == checkBit64(R[y], 31) && checkBit64(tmpAdd_1, 31) != checkBit64(R[x], 31)) {
+        if ((checkBit64(R[x], 31) == checkBit64(R[y], 31)) && (checkBit64(R[z], 31) != checkBit64(R[x], 31))) {
           R[31] = R[31] | 0b1000;
-        } else {
-            R[31] = R[31] & ~0b1000;
-        }
+        } 
 
         //cy rz32 = 1
-        if ((checkBit64(tmpAdd_1, 32)) != 0) {
+        if ((checkBit64(R[z], 32)) != 0) {
           R[31] = R[31] | 0b1;
-        } else {
-          R[31] = R[31] & ~0b1;
-        }
+        } 
 
 
       // 0x????????:	add rz,rx,ir Rz=Rx+IR=0x????????,SR=0x????????
         sprintf(instrucao, "add %s,%s,%s", getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
-        fprintf(output, "0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), tmpAdd_1, R[31]);
-        printf("0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), tmpAdd_1, R[31]);
+        fprintf(output, "0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+        printf("0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
         break;
 
 
