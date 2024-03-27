@@ -276,34 +276,34 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16;
         y = (R[28] & (0b11111 << 11)) >> 11;
 
-        //tmpAdd_1 = extendTo64(R[z]);
-        R[z] = R[x] + R[y];
+        tmpAdd_1 = R[x] + R[y];
 
         //zn rz = 0
-        if (R[z] == 0) {
+        if (tmpAdd_1 == 0) {
           R[31] = R[31] | 0b1000000;
         } 
 
         //sn rz31 = 1
-        if (checkBit64(R[z], 31) != 0) {
+        if (checkBit64(tmpAdd_1, 31) != 0) {
           R[31] = R[31] | 0b10000;
         } 
 
-        //ov
-        if ((checkBit64(R[x], 31) == checkBit64(R[y], 31)) && (checkBit64(R[z], 31) != checkBit64(R[x], 31))) {
+        //ov Rx31 = Ry31 ^ Rz31 != Rx31
+        if ((checkBit64(R[x], 31) == checkBit64(R[y], 31)) && (checkBit64(tmpAdd_1, 31) != checkBit64(R[x], 31))) {
           R[31] = R[31] | 0b1000;
         } 
 
         //cy rz32 = 1
-        if ((checkBit64(R[z], 32)) != 0) {
+        if ((checkBit64(tmpAdd_1, 32)) != 0) {
           R[31] = R[31] | 0b1;
         } 
 
+    
 
       // 0x????????:	add rz,rx,ir Rz=Rx+IR=0x????????,SR=0x????????
         sprintf(instrucao, "add %s,%s,%s", getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
-        fprintf(output, "0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-        printf("0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+        fprintf(output, "0x%08X:\t%-25s\t%s=%s+%s=0x%08lX,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), tmpAdd_1, R[31]);
+        printf("0x%08X:\t%-25s\t%s=%s+%s=0x%08lX,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), tmpAdd_1, R[31]);
         break;
 
 
@@ -1594,20 +1594,28 @@ int main(int argc, char *argv[]) {
     //reti
       case 0b100000:
 
+        //R[29] = R[29] << 2;
         cr = R[26];
         ipc = R[27];
         pc = R[29];
         sp = R[30];
 
-        R[30] = R[30] + 4, R[27] = MEM32[R[30] >> 2];
-        R[30] = R[30] + 4, R[26] = MEM32[R[30] >> 2];
-        R[30] = R[30] + 4, R[29] = MEM32[R[30] >> 2];
+        R[30] += 4;
+        R[27] = MEM32[R[30] >> 2];
+        R[30] += 4;
+        R[26] = MEM32[R[30] >> 2];
+        R[30] += 4;
+        R[29] = MEM32[R[30] >> 2];
+
 
         //reti 	
         //IPC=MEM[0x????????]=0x????????,CR=MEM[0x????????]=0x????????,PC=MEM[0x????????]=0x????????
         sprintf(instrucao, "reti");
-        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, R[27], R[30], R[26], R[30], R[29]);
-        printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, R[27], R[30], R[26], R[30], R[29]);
+        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29]);
+        printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29]);
+
+        R[29] -= 4;
+
         break; 
 
 
