@@ -173,6 +173,10 @@ int main(int argc, char *argv[]) {
   uint32_t watchdog = 0, counter = 0;
   bool watchdog_pending = false;
 
+  //TERMINAL
+  char terminal;
+
+
 
   uint8_t *MEM8 = (uint8_t*)(calloc(32, 1024));
   uint32_t *MEM32 = (uint32_t*)(calloc(32, 1024));
@@ -229,7 +233,7 @@ int main(int argc, char *argv[]) {
       
     }
     
-
+     
     switch (opcode) 
     {
       // mov (tipe U)
@@ -1186,7 +1190,14 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16;
         i = R[28] & 0xFFFF;
 
-        R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
+
+        if  ((R[x] + i) == 0x8888888b) {
+          R[z] = terminal;
+        } else {
+          R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
+        }
+
+       // R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
 
 
         //0x????????:	s8 [rx+-s],rz            	MEM[0x????????]=Rz=0x??
