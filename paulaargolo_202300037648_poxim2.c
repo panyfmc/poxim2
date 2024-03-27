@@ -19,10 +19,6 @@ void verifyZero(uint32_t reg, uint32_t teste, uint64_t temp) {
 //verificar um bit  -- value: valor a verificar -- bitPosition: A posição do bit (0 a 31).
 // 1 se o bit estiver definido -- 0 se o bit estiver desligado -- -1 se bitPosition for inválido.
 int checkBit32(uint32_t value, int bitPosition) {
-    // Verifica se bitPosition é inválido (negativo OU maior que 31)
-    if (bitPosition < 0 || bitPosition > 31) {
-        return -1; // Valor inválido
-    }
     // Cria uma máscara para isolar o bit
     uint32_t mask = 1u << bitPosition;
     // Aplica a máscara e verifica se o bit é 0 ou 1
@@ -31,12 +27,7 @@ int checkBit32(uint32_t value, int bitPosition) {
 
 
 int checkBit64(uint64_t value2, int bitPosition2) {
-    if (bitPosition2 < 0 || bitPosition2 > 63) {
-        return -1; // Valor inválido
-    }
-    // Cria uma máscara para isolar o bit
-    uint32_t mask2 = 1u << bitPosition2;
-    // Aplica a máscara e verifica se o bit é 0 ou 1
+    uint64_t mask2 = 1ull << bitPosition2;
     return (value2 & mask2) != 0;
 }
 
@@ -276,34 +267,46 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16;
         y = (R[28] & (0b11111 << 11)) >> 11;
 
-        tmpAdd_1 = R[x] + R[y];
+        //tmpAdd_1 = R[x] + R[y];
+
+        tmpAdd_1 = (uint64_t)(R[x]) + (uint64_t)(R[y]);
+        //(uint64_t)(R[z]);
+        R[z] = tmpAdd_1;
 
         //zn rz = 0
-        if (tmpAdd_1 == 0) {
+        if (R[z] != 0) {
+          R[31] = R[31] & ~0b1000000;
+        } else {
           R[31] = R[31] | 0b1000000;
-        } 
+        }
 
         //sn rz31 = 1
-        if (checkBit64(tmpAdd_1, 31) != 0) {
+        if ((checkBit64(R[z], 31)) != 0) {
           R[31] = R[31] | 0b10000;
-        } 
+        } else {
+          R[31] = R[31] & ~0b10000;
+        }
 
         //ov Rx31 = Ry31 ^ Rz31 != Rx31
-        if ((checkBit64(R[x], 31) == checkBit64(R[y], 31)) && (checkBit64(tmpAdd_1, 31) != checkBit64(R[x], 31))) {
+        if ((checkBit64(R[x], 31) == checkBit64(R[y], 31)) && (checkBit64(R[z], 31) != checkBit64(R[x], 31))) {
           R[31] = R[31] | 0b1000;
-        } 
+        } else {
+            R[31] = R[31] & ~0b1000;
+        }
 
         //cy rz32 = 1
-        if ((checkBit64(tmpAdd_1, 32)) != 0) {
+        if ((checkBit64(R[z], 32)) != 0) {
           R[31] = R[31] | 0b1;
-        } 
+        } else {
+          R[31] = R[31] & ~0b1;
+        }
 
     
 
       // 0x????????:	add rz,rx,ir Rz=Rx+IR=0x????????,SR=0x????????
         sprintf(instrucao, "add %s,%s,%s", getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
-        fprintf(output, "0x%08X:\t%-25s\t%s=%s+%s=0x%08lX,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), tmpAdd_1, R[31]);
-        printf("0x%08X:\t%-25s\t%s=%s+%s=0x%08lX,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), tmpAdd_1, R[31]);
+        fprintf(output, "0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+        printf("0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
         break;
 
 
