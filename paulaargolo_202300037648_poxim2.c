@@ -16,11 +16,21 @@ void verifyZero(uint32_t reg, uint32_t teste, uint64_t temp) {
 }
 
 
+void interruptionSubRoutine(uint32_t* R, uint32_t* MEM32) {
+        MEM32[R[30] >> 2] = R[29] + 4;
+        R[30] -= 4;
+        MEM32[R[30] >> 2] = R[26];
+        R[30] -= 4;
+        MEM32[R[30] >> 2] = R[27];
+        R[30] -= 4;
+      }
+
+
 //verificar um bit  -- value: valor a verificar -- bitPosition: A posição do bit (0 a 31).
 // 1 se o bit estiver definido -- 0 se o bit estiver desligado -- -1 se bitPosition for inválido.
 int checkBit32(uint32_t value, int bitPosition) {
     // Cria uma máscara para isolar o bit
-    uint32_t mask = 1u << bitPosition;
+    uint32_t mask = 1ul << bitPosition;
     // Aplica a máscara e verifica se o bit é 0 ou 1
     return (value & mask) != 0;
 }
@@ -1597,12 +1607,13 @@ int main(int argc, char *argv[]) {
     //reti
       case 0b100000:
 
-        //R[29] = R[29] << 2;
-        cr = R[26];
-        ipc = R[27];
+        R[29] = R[29] << 2;
         pc = R[29];
-        sp = R[30];
+        //cr = R[26];
+        //ipc = R[27];
+        //sp = R[30];
 
+        
         R[30] += 4;
         R[27] = MEM32[R[30] >> 2];
         R[30] += 4;
@@ -1610,15 +1621,12 @@ int main(int argc, char *argv[]) {
         R[30] += 4;
         R[29] = MEM32[R[30] >> 2];
 
-
         //reti 	
         //IPC=MEM[0x????????]=0x????????,CR=MEM[0x????????]=0x????????,PC=MEM[0x????????]=0x????????
         sprintf(instrucao, "reti");
-        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29]);
+        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, (R[30] - 8), R[27], (R[30] - 4), R[26], R[30], R[29]);
         printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29]);
-
         R[29] -= 4;
-
         break; 
 
 
@@ -1867,7 +1875,7 @@ int main(int argc, char *argv[]) {
           printf("0x%08X:\t%-25s\t%s=0x%08X\n", R[29], instrucao, getRegisterBigger(z), R[z]);
         }
         break;
-
+          
 
       default:
         fprintf(output, "[INVALID INSTRUCTION @ 0x%08X]\n", R[29]);
