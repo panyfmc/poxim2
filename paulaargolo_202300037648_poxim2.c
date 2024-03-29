@@ -341,9 +341,7 @@ int main(int argc, char *argv[]) {
             verifyZero(z, 1, tmpSla_1);
             verifyZero(x, 1, tmpSla_1);
 
-            // Extracting the 32 most significant bits
             R[z] = (uint32_t)setRegistrador(z, (tmpSla_1 >> 32) & 0xFFFFFFFF);
-             // Extracting the least significant bits
             R[x] = (uint32_t)setRegistrador(x, (tmpSla_1) & 0xFFFFFFFF);
 
             tmpSla_1 = R[x] | R[z];
