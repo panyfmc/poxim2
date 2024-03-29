@@ -279,8 +279,8 @@ int main(int argc, char *argv[]) {
 
         //tmpAdd_1 = R[x] + R[y];
 
-        tmpAdd_1 = (uint64_t)(R[x]) + (uint64_t)(R[y]);
-        //(uint64_t)(R[z]);
+        tmpAdd_1 = R[x] + R[y];
+        (uint64_t)(R[z]);
         R[z] = tmpAdd_1;
 
         //zn rz = 0
@@ -1855,7 +1855,7 @@ int main(int argc, char *argv[]) {
         i = R[28] & 0xFFFF;
 
         if (i == 0) {
-          //___
+          //cbr
           R[z] = R[z] & ~(0b1 << x);
           
 
