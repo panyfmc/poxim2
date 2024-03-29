@@ -16,16 +16,6 @@ void verifyZero(uint32_t reg, uint32_t teste, uint64_t temp) {
 }
 
 
-void interruptionSubRoutine(uint32_t* R, uint32_t* MEM32) {
-        MEM32[R[30] >> 2] = R[29] + 4;
-        R[30] -= 4;
-        MEM32[R[30] >> 2] = R[26];
-        R[30] -= 4;
-        MEM32[R[30] >> 2] = R[27];
-        R[30] -= 4;
-      }
-
-
 //verificar um bit  -- value: valor a verificar -- bitPosition: A posição do bit (0 a 31).
 // 1 se o bit estiver definido -- 0 se o bit estiver desligado -- -1 se bitPosition for inválido.
 int checkBit32(uint32_t value, int bitPosition) {
@@ -163,6 +153,17 @@ bool bitCY(uint32_t R) {
 }
 
 
+void interruptionSubRoutine(uint32_t* R, uint32_t* MEM32) {
+
+  MEM32[R[30] >> 2] = R[29] + 4;
+  R[30] -= 4;
+  MEM32[R[30] >> 2] = R[26];
+  R[30] -= 4;
+  MEM32[R[30] >> 2] = R[27];
+  R[30] -= 4;
+}
+
+
 int main(int argc, char *argv[]) { 
 
   FILE *input = fopen(argv[1], "r");
@@ -233,6 +234,7 @@ int main(int argc, char *argv[]) {
       }
       
     }
+
     
      
     switch (opcode) 
@@ -247,8 +249,8 @@ int main(int argc, char *argv[]) {
 
         //0x????????:	mov rz,u                 	Rz=0x????????
         sprintf(instrucao, "mov %s,%i", getRegisterSmaller(z), xyl);
-        fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", R[29], instrucao, getRegisterBigger(z), xyl);
-        printf("0x%08X:\t%-25s\t%s=0x%08X\n", R[29], instrucao, getRegisterBigger(z), xyl);
+        fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", pc, instrucao, getRegisterBigger(z), xyl);
+        printf("0x%08X:\t%-25s\t%s=0x%08X\n", pc, instrucao, getRegisterBigger(z), xyl);
         break;
 
 
@@ -1203,12 +1205,11 @@ int main(int argc, char *argv[]) {
 
 
         if  ((R[x] + i) == 0x8888888b) {
+          interruptionSubRoutine;
           R[z] = terminal;
         } else {
           R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
         }
-
-       // R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
 
 
         //0x????????:	s8 [rx+-s],rz            	MEM[0x????????]=Rz=0x??
