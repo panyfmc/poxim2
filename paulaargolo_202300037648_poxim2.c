@@ -153,17 +153,6 @@ bool bitCY(uint32_t R) {
 }
 
 
-void interruptionSubRoutine(uint32_t* R, uint32_t* MEM32) {
-
-  MEM32[R[30] >> 2] = R[29] + 4;
-  R[30] -= 4;
-  MEM32[R[30] >> 2] = R[26];
-  R[30] -= 4;
-  MEM32[R[30] >> 2] = R[27];
-  R[30] -= 4;
-}
-
-
 int main(int argc, char *argv[]) { 
 
   FILE *input = fopen(argv[1], "r");
@@ -199,7 +188,7 @@ int main(int argc, char *argv[]) {
     char instrucao[30] = {0};
 
     uint8_t z = 0, x = 0, y = 0, v = 0, w = 0;
-    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, hardwareValue = 0;
+    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, addr = 0, shift = 0, hardwareValue = 0;
     uint64_t tmpSla_1 = 0, tmpSll_1 = 0,tmpSra_1 = 0, tmpSrl_1 = 0, cmp1 = 0, cmpi1 = 0, tmpMul_1 = 0, tmpMuls_1 = 0, tmpAdd_1 = 0;
 
     R[28] = ((MEM8[R[29] + 0] << 24) | (MEM8[R[29] + 1] << 16) | (MEM8[R[29] + 2] << 8) | (MEM8[R[29] + 3] << 0)) | MEM32[R[29] >> 2];
@@ -1141,17 +1130,18 @@ int main(int argc, char *argv[]) {
     // l8
       case 0b011000:
 
+        pc = R[29];
         z = (R[28] & (0b11111 << 21)) >> 21;
         x = (R[28] & (0b11111 << 16)) >> 16;
         i = R[28] & 0xFFFF;
-        uint32_t addr = R[x] + i;
-        uint32_t shift = (8 * (3 - (addr % 4))); 
+        addr = R[x] + i;
+        shift = (8 * (3 - (addr % 4)));   
         R[z] = ((MEM32[addr >> 2]) & (0xFF << (shift))) >> shift; 
         
 
-        sprintf(instrucao, "l8 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
-        fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%02X\n", R[29], instrucao, z, R[x] + i, R[z]);
-        printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%02X\n", R[29], instrucao, z, R[x] + i, R[z]);
+        sprintf(instrucao, "l8 %s,[%s%s%i]", getRegisterSmaller(z), getRegisterSmaller(x), (i >= 0) ? ("+") : (""), i);
+        fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
+        printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
         break;
 
 
@@ -1162,10 +1152,9 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16;
         i = R[28] & 0xFFFF;
 
-        uint32_t addr1 = R[x] + i;
-
-        uint32_t shift1 = (16 * (1 - (addr1 % 2))); 
-        R[z] = ((MEM32[addr1 >> 1]) & (0xFFFF << (shift1))) >> shift1; 
+        addr = R[x] + i;
+        shift = (16 * (1 - (addr % 2))); 
+        R[z] = ((MEM32[addr >> 1]) & (0xFFFF << (shift))) >> shift; 
 
 
       //0x????????:	l16 rz,[rx+-s]           	Rz=MEM[0x????????]=0x????
@@ -1203,19 +1192,20 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16;
         i = R[28] & 0xFFFF;
 
+        addr = R[x] + i;
+        shift = (8 * (3 - (addr % 4))); 
 
-        if  ((R[x] + i) == 0x8888888b) {
-          interruptionSubRoutine;
-          R[z] = terminal;
+        if  ((addr) == 0x8888888B) {
+          terminal = R[z];
         } else {
           R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
         }
 
 
         //0x????????:	s8 [rx+-s],rz            	MEM[0x????????]=Rz=0x??
-        sprintf(instrucao, "s8 [r%u%s%i],r%u", x, (i >= 0) ? ("+") : (""), i, z);
-        fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]=R%u=0x%02X\n", R[29], instrucao, R[x] + i, z, R[z]);
-        printf("0x%08X:\t%-25s\tMEM[0x%08X]=R%u=0x%02X\n", R[29], instrucao, R[x] + i, z, R[z]);
+        sprintf(instrucao, "s8 [r%u%s%i],%s", x, (i >= 0) ? ("+") : (""), i, getRegisterSmaller(z));
+        fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]=%s=0x%02X\n", R[29], instrucao, R[x] + i, getRegisterBigger(z), R[z]);
+        printf("0x%08X:\t%-25s\tMEM[0x%08X]=%s=0x%02X\n", R[29], instrucao, R[x] + i, getRegisterBigger(z), R[z]);
         break;
 
 
@@ -1226,13 +1216,16 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16;
         i = R[28] & 0xFFFF;
 
-        R[z] = (((0xFFFF << (shift1))) >> shift1) & (MEM32[addr1 >> 1]); 
+        addr = R[x] + i;
+        shift = (16 * (1 - (addr % 2))); 
+
+        R[z] = (((0xFFFF << (shift))) >> shift) & (MEM32[addr >> 1]); 
 
 
       //0x????????:	s16 [rx+-s],rz           	//MEM[0x????????]=Rz=0x????
-        sprintf(instrucao, "s16 [r%u%s%i],r%u", x, (i >= 0) ? ("+") : (""), i, z);
-        fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]=R%u=0x%04X\n", R[29], instrucao, (R[x] + i) << 1, z, R[z]);
-        printf("0x%08X:\t%-25s\tMEM[0x%08X]=R%u=0x%04X\n", R[29], instrucao, (R[x] + i) << 1, z, R[z]);
+        sprintf(instrucao, "s16 [%s%s%i],%s", getRegisterSmaller(x), (i >= 0) ? ("+") : (""), i, getRegisterSmaller(z));
+        fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]=%s=0x%04X\n", R[29], instrucao, (R[x] + i) << 1, getRegisterBigger(z), R[z]);
+        printf("0x%08X:\t%-25s\tMEM[0x%08X]=%s=0x%04X\n", R[29], instrucao, (R[x] + i) << 1, getRegisterBigger(z), R[z]);
         break;
 
 
