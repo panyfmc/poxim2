@@ -164,9 +164,20 @@ int main(int argc, char *argv[]) {
   uint32_t watchdog = 0, counter = 0;
   bool watchdog_pending = false;
 
-  //TERMINAL
-  char terminal;
-
+  // TERMINAL
+  //typedef struct {
+  char terminal = { 0 };
+  //} Terminal;
+/*
+  void imprimirTerminal(Terminal *p) {
+    if (terminal == 0) {
+      fprintf(output, "[TERMINAL]\n");
+      printf("[TERMINAL]\n");
+    } else {
+        fprintf(output, "%s\n", p-> terminal);
+        printf("%s\n", p-> terminal);
+      }
+    } */
 
 
   uint8_t *MEM8 = (uint8_t*)(calloc(32, 1024));
@@ -221,10 +232,7 @@ int main(int argc, char *argv[]) {
         counter -= 1;
         watchdog -= 1;
       }
-      
     }
-
-    
      
     switch (opcode) 
     {
