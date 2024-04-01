@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   uint32_t watchdog = 0, counter = 0;
   bool watchdog_pending = false;
 
-  uint32_t terminal = 0;
+  uint32_t terminal;
 
 
   uint8_t *MEM8 = (uint8_t*)(calloc(32, 1024));
@@ -1902,9 +1902,14 @@ int main(int argc, char *argv[]) {
       fprintf(output, "[TERMINAL]\n");
       fprintf(output, "%c\n", terminal);
       continue; // Aqui usamos o break para sair do loop após a execução
-    }
+    } */
 
-  }  */
+  }  
+
+  if (terminal != 0) {
+    fprintf(output, "[TERMINAL]\n");
+    fprintf(output, "%c\n", terminal);
+  } 
 
 
   printf("[END OF SIMULATION]\n");
