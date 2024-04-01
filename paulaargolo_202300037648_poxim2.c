@@ -1897,19 +1897,26 @@ int main(int argc, char *argv[]) {
     }
 
     R[29] = R[29] + 4;
-    
+
+  } 
+
+  //TERMINAL
+
+  for (int i = 0; i < 0X8888888B; i++) {
+    fprintf(output, "[TERMINAL]\n");
+    fprintf(output, "%c\n", terminal);
+  }
+
   /*  while (terminal != 0) {
       fprintf(output, "[TERMINAL]\n");
       fprintf(output, "%c\n", terminal);
       continue; // Aqui usamos o break para sair do loop após a execução
-    } */
-
-  }  
+    } 
 
   if (terminal != 0) {
     fprintf(output, "[TERMINAL]\n");
     fprintf(output, "%c\n", terminal);
-  } 
+  } */
 
 
   printf("[END OF SIMULATION]\n");
