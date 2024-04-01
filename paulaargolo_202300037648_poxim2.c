@@ -1902,21 +1902,21 @@ int main(int argc, char *argv[]) {
 
   //TERMINAL
 
-  for (int i = 0; i < 0X8888888B; i++) {
+  /*for (int i = 0; i < 0X8888888B; i++) {
     fprintf(output, "[TERMINAL]\n");
     fprintf(output, "%c\n", terminal);
   }
 
-  /*  while (terminal != 0) {
+    while (terminal != 0) {
       fprintf(output, "[TERMINAL]\n");
       fprintf(output, "%c\n", terminal);
       continue; // Aqui usamos o break para sair do loop após a execução
-    } 
+    } */
 
   if (terminal != 0) {
     fprintf(output, "[TERMINAL]\n");
     fprintf(output, "%c\n", terminal);
-  } */
+  } 
 
 
   printf("[END OF SIMULATION]\n");
