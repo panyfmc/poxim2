@@ -1604,13 +1604,16 @@ int main(int argc, char *argv[]) {
         sp = R[30];
         pc = R[29];
 
+        //sp = sp + 4, pc = memsp
+
         R[30] = R[30] + 4;
-        MEM32[R[30] >> 2] = R[29];
+        R[29] = MEM32[R[30] >> 2];
+        R[29] -= 4;
 
         //0x????????:	ret                      	PC=MEM[0x????????]=0x????????
         sprintf(instrucao, "ret");
-        fprintf(output, "0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, MEM32[sp >> 2]);
-        printf("0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%08X\n", pc, instrucao, sp, MEM32[sp >> 2]);
+        fprintf(output, "0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30], R[29] + 4);
+        printf("0x%08X:\t%-25s\tPC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30], R[29] + 4);
         break;  
 
 
