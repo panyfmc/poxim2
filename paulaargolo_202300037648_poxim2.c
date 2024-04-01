@@ -15,7 +15,6 @@ void verifyZero(uint32_t reg, uint32_t teste, uint64_t temp) {
   } 
 }
 
-
 //verificar um bit  -- value: valor a verificar -- bitPosition: A posição do bit (0 a 31).
 // 1 se o bit estiver definido -- 0 se o bit estiver desligado -- -1 se bitPosition for inválido.
 int checkBit32(uint32_t value, int bitPosition) {
@@ -164,7 +163,11 @@ int main(int argc, char *argv[]) {
   uint32_t watchdog = 0, counter = 0;
   bool watchdog_pending = false;
 
-  uint32_t terminal;
+
+  //TERMINAL
+  int terminal;
+  char teste[20];
+  int count = 0;
 
 
   uint8_t *MEM8 = (uint8_t*)(calloc(32, 1024));
@@ -242,6 +245,8 @@ int main(int argc, char *argv[]) {
         printf("%s\n", p-> terminal);
       }
     } */
+
+
      
     switch (opcode) 
     {
@@ -1215,6 +1220,10 @@ int main(int argc, char *argv[]) {
 
         if  ((addr) == 0x8888888B) {
           terminal = R[z];
+          teste[count] = terminal;
+          fprintf(output, "TERMINAL, %c\n", terminal);
+          fprintf(output, "TESTE, %c\n", teste[count]);
+          count++;
         } else {
           R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
         }
@@ -1900,11 +1909,10 @@ int main(int argc, char *argv[]) {
     }
 
     R[29] = R[29] + 4;
-
+    
   } 
 
   //TERMINAL
-
   /*for (int i = 0; i < 0X8888888B; i++) {
     fprintf(output, "[TERMINAL]\n");
     fprintf(output, "%c\n", terminal);
@@ -1916,14 +1924,20 @@ int main(int argc, char *argv[]) {
       continue; // Aqui usamos o break para sair do loop após a execução
     } */
 
-  if (terminal != 0) {
-    fprintf(output, "[TERMINAL]\n");
-    fprintf(output, "%c\n", terminal);
-  } 
+  //if (terminal != 0) {
+  
+  //fprintf(output, "%c\n", terminal);
+  printf("[TERMINAL]\n");
+  fprintf(output, "[TERMINAL]\n");
+  //printf("%d", terminal);
 
+  for (int i = 0; i < count; i++) {
+    fprintf(output, "%c", teste[i]);
+    printf("%c", teste[i]);
+  }
 
-  printf("[END OF SIMULATION]\n");
-  fprintf(output, "[END OF SIMULATION]\n");
+  printf("\n[END OF SIMULATION]\n");
+  fprintf(output, "\n[END OF SIMULATION]\n");
   fclose(input);
   fclose(output);
   return 0;
