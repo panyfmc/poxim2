@@ -1221,8 +1221,8 @@ int main(int argc, char *argv[]) {
         if  ((addr) == 0x8888888B) {
           terminal = R[z];
           teste[count] = terminal;
-          fprintf(output, "TERMINAL, %c\n", terminal);
-          fprintf(output, "TESTE, %c\n", teste[count]);
+          //fprintf(output, "TERMINAL, %c\n", terminal);
+          //fprintf(output, "TESTE, %c\n", teste[count]);
           count++;
         } else {
           R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
