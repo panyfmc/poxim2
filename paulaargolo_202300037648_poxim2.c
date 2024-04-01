@@ -1,4 +1,3 @@
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -165,26 +164,7 @@ int main(int argc, char *argv[]) {
   uint32_t watchdog = 0, counter = 0;
   bool watchdog_pending = false;
 
-
-  /* TERMINAL
-  typedef struct createsTerminal {
-    uint32_t address;
-    uint32_t value;
-    uint8_t input;
-    char* output;
-    int maxSize;
-    int currentSize;
-  } Terminal; 
-
-  Terminal terminal;
-
-  Terminal createTerminal(uint32_t address);
-  terminal = createTerminal(0x88888888);
-  bool isDeviceAddress(uint32_t address, uint32_t deviceAddress); */
-
-
-  
-
+  uint32_t terminal = 0;
 
 
   uint8_t *MEM8 = (uint8_t*)(calloc(32, 1024));
@@ -240,9 +220,32 @@ int main(int argc, char *argv[]) {
         watchdog -= 1;
       }
     }
+
+    /*TERMINAL
+
+    if (terminal != 0) {
+      fprintf(output, "[TERMINAL]\n");
+      fprintf(output, "%c\n", terminal);
+    } */
+
+    // TERMINAL
+  //typedef struct {
+  //char terminal;
+  //} Terminal;
+/*
+  void imprimirTerminal(Terminal *p) {
+    if (terminal == 0) {
+      fprintf(output, "[TERMINAL]\n");
+      printf("[TERMINAL]\n");
+    } else {
+        fprintf(output, "%s\n", p-> terminal);
+        printf("%s\n", p-> terminal);
+      }
+    } */
      
     switch (opcode) 
     {
+      
       // mov (tipe U)
       case 0b000000:
         pc = R[29];
@@ -1211,7 +1214,7 @@ int main(int argc, char *argv[]) {
         shift = (8 * (3 - (addr % 4))); 
 
         if  ((addr) == 0x8888888B) {
-          Out.terminal = R[z];
+          terminal = R[z];
         } else {
           R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
         }
@@ -1892,8 +1895,17 @@ int main(int argc, char *argv[]) {
 
 
     }
+
     R[29] = R[29] + 4;
-  }
+    
+  /*  while (terminal != 0) {
+      fprintf(output, "[TERMINAL]\n");
+      fprintf(output, "%c\n", terminal);
+      continue; // Aqui usamos o break para sair do loop após a execução
+    }
+
+  }  */
+
 
   printf("[END OF SIMULATION]\n");
   fprintf(output, "[END OF SIMULATION]\n");
