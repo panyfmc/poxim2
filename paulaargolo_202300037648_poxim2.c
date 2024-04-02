@@ -165,8 +165,9 @@ int main(int argc, char *argv[]) {
 
 
   //TERMINAL
+  int caps = 16;
   int terminal;
-  char teste[20];
+  char* teste = (char*)(calloc(1, caps));
   int count = 0;
 
 
@@ -175,6 +176,7 @@ int main(int argc, char *argv[]) {
 
   printf("[START OF SIMULATION]\n");
   fprintf(output, "[START OF SIMULATION]\n");
+  
 
   char row[300];
   uint32_t c = 0;
@@ -1220,6 +1222,10 @@ int main(int argc, char *argv[]) {
 
         if  ((addr) == 0x8888888B) {
           terminal = R[z];
+          if (count == caps) {
+            caps = caps << 1;
+            teste = (char*)(realloc(teste, caps));
+          }
           teste[count] = terminal;
           //fprintf(output, "TERMINAL, %c\n", terminal);
           //fprintf(output, "TESTE, %c\n", teste[count]);
@@ -1912,24 +1918,8 @@ int main(int argc, char *argv[]) {
     
   } 
 
-  //TERMINAL
-  /*for (int i = 0; i < 0X8888888B; i++) {
-    fprintf(output, "[TERMINAL]\n");
-    fprintf(output, "%c\n", terminal);
-  }
-
-    while (terminal != 0) {
-      fprintf(output, "[TERMINAL]\n");
-      fprintf(output, "%c\n", terminal);
-      continue; // Aqui usamos o break para sair do loop após a execução
-    } */
-
-  //if (terminal != 0) {
-  
-  //fprintf(output, "%c\n", terminal);
   printf("[TERMINAL]\n");
   fprintf(output, "[TERMINAL]\n");
-  //printf("%d", terminal);
 
   for (int i = 0; i < count; i++) {
     fprintf(output, "%c", teste[i]);
