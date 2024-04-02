@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
 
   printf("[START OF SIMULATION]\n");
   fprintf(output, "[START OF SIMULATION]\n");
-  
+
 
   char row[300];
   uint32_t c = 0;
@@ -211,12 +211,12 @@ int main(int argc, char *argv[]) {
           watchdog = 0;
           printf("[HARDWARE INTERRUPTION 1]\n");
           fprintf(output, "[HARDWARE INTERRUPTION 1]\n");
-          R[26] = 0xE1AC04DA;
-          R[27] = R[29];
           MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
           R[29] = 0x00000010;
+          R[26] = 0xE1AC04DA;
+          R[27] = R[29];
           watchdog_pending = false;
           continue;
         }
