@@ -170,6 +170,13 @@ int main(int argc, char *argv[]) {
   char* teste = (char*)(calloc(1, caps));
   int count = 0;
 
+  
+  //FPU
+  uint32_t fpuAddress = 0;
+  uint32_t fpuX = 0x80808880;
+  uint32_t fpuY = 0x80808884;
+  uint32_t fpuResult = 0x80808888;
+  uint32_t fpuControl = 0x8080888C;
 
   uint8_t *MEM8 = (uint8_t*)(calloc(32, 1024));
   uint32_t *MEM32 = (uint32_t*)(calloc(32, 1024));
@@ -215,8 +222,8 @@ int main(int argc, char *argv[]) {
           MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
           R[29] = 0x00000010;
-          R[26] = 0xE1AC04DA;
-          R[27] = R[29];
+          R[26] = 0xE1AC04DA; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+          R[27] = R[29]; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           watchdog_pending = false;
           continue;
         }
@@ -226,27 +233,21 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    /*TERMINAL
 
-    if (terminal != 0) {
-      fprintf(output, "[TERMINAL]\n");
-      fprintf(output, "%c\n", terminal);
-    } */
-
-    // TERMINAL
-  //typedef struct {
-  //char terminal;
-  //} Terminal;
-/*
-  void imprimirTerminal(Terminal *p) {
-    if (terminal == 0) {
-      fprintf(output, "[TERMINAL]\n");
-      printf("[TERMINAL]\n");
-    } else {
-        fprintf(output, "%s\n", p-> terminal);
-        printf("%s\n", p-> terminal);
-      }
-    } */
+    //fpu 
+  if (0x80000000 & fpuAddress) {
+    if (fpuAddress & 0b1 || fpuAddress & 0b10 || fpuAddress & 0b11 || fpuAddress & 0b100) {
+      printf("[HARDWARE INTERRUPTION 3]\n");
+      fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
+      MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
+      MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
+      MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
+      R[29] = 0x00000101;
+      R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+      R[27] = R[29]; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+    }
+  }
+    
 
 
      
@@ -1227,13 +1228,16 @@ int main(int argc, char *argv[]) {
             teste = (char*)(realloc(teste, caps));
           }
           teste[count] = terminal;
-          //fprintf(output, "TERMINAL, %c\n", terminal);
-          //fprintf(output, "TESTE, %c\n", teste[count]);
           count++;
+        } else if ((addr) == 0x80808880) {
+            fpuAddress = R[z];
+        } else if ((addr) == 0x80808884) {
+            fpuAddress = R[z];
+        } else if ((addr) == 0x8080888C) {
+            fpuAddress = R[z];
         } else {
-          R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
+            R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
         }
-
 
         //0x????????:	s8 [rx+-s],rz            	MEM[0x????????]=Rz=0x??
         sprintf(instrucao, "s8 [r%u%s%i],%s", x, (i >= 0) ? ("+") : (""), i, getRegisterSmaller(z));
