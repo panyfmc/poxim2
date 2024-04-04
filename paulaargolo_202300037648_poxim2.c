@@ -235,19 +235,17 @@ int main(int argc, char *argv[]) {
 
 
     //fpu 
-    if (0x80000000 & fpuAddress) {
-      if (fpuAddress & 0b1 || fpuAddress & 0b10 || fpuAddress & 0b11 || fpuAddress & 0b100) {
-        printf("[HARDWARE INTERRUPTION 3]\n");
-        fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
-        MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
-        MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
-        MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
-        R[29] = 0x00000018;
-        R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
-        R[27] = R[29]; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
-      }
+    if (fpuAddress == 0b1 || fpuAddress == 0b10 || fpuAddress == 0b11 || fpuAddress == 0b100) {
+      fpuAddress = 0;
+      printf("[HARDWARE INTERRUPTION 3]\n");
+      fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
+      MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
+      MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
+      MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
+      R[29] = 0x00000018;
+      R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+      R[27] = R[29]; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
     }
-
 
      
     switch (opcode) 
@@ -1228,11 +1226,11 @@ int main(int argc, char *argv[]) {
           }
           teste[count] = terminal;
           count++;
-        } else if ((addr) == 0x80808880) {
+        } else if ((addr) == 0x20202220) {
             fpuAddress = R[z];
-        } else if ((addr) == 0x80808884) {
+        } else if ((addr) == 0x20202221) {
             fpuAddress = R[z];
-        } else if ((addr) == 0x8080888C) {
+        } else if ((addr) == 0x20202223) {
             fpuAddress = R[z];
         } else {
             R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
@@ -1276,11 +1274,11 @@ int main(int argc, char *argv[]) {
         if  ((R[x] + ExtendedBit15To32(i)) == 0x20202020) {
           watchdog = R[z];
           counter = (0x7FFFFFFF & watchdog);
-        } else if ((R[x] + ExtendedBit15To32(i)) == 0x80808880) {
+        } else if ((R[x] + ExtendedBit15To32(i)) == 0x20202220) {
             fpuAddress = R[z];
-        } else if ((R[x] + ExtendedBit15To32(i)) == 0x80808884) {
+        } else if ((R[x] + ExtendedBit15To32(i)) == 0x20202221) {
             fpuAddress = R[z];
-        } else if ((R[x] + ExtendedBit15To32(i)) == 0x8080888C) {
+        } else if ((R[x] + ExtendedBit15To32(i)) == 0x20202223) {
             fpuAddress = R[z];
         } else {
           MEM32[R[x] + ExtendedBit15To32(i)] = R[z];
