@@ -235,19 +235,18 @@ int main(int argc, char *argv[]) {
 
 
     //fpu 
-  if (0x80000000 & fpuAddress) {
-    if (fpuAddress & 0b1 || fpuAddress & 0b10 || fpuAddress & 0b11 || fpuAddress & 0b100) {
-      printf("[HARDWARE INTERRUPTION 3]\n");
-      fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
-      MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
-      MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
-      MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
-      R[29] = 0x00000101;
-      R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
-      R[27] = R[29]; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+    if (0x80000000 & fpuAddress) {
+      if (fpuAddress & 0b1 || fpuAddress & 0b10 || fpuAddress & 0b11 || fpuAddress & 0b100) {
+        printf("[HARDWARE INTERRUPTION 3]\n");
+        fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
+        MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
+        MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
+        MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
+        R[29] = 0x00000018;
+        R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+        R[27] = R[29]; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+      }
     }
-  }
-    
 
 
      
@@ -1277,6 +1276,12 @@ int main(int argc, char *argv[]) {
         if  ((R[x] + ExtendedBit15To32(i)) == 0x20202020) {
           watchdog = R[z];
           counter = (0x7FFFFFFF & watchdog);
+        } else if ((R[x] + ExtendedBit15To32(i)) == 0x80808880) {
+            fpuAddress = R[z];
+        } else if ((R[x] + ExtendedBit15To32(i)) == 0x80808884) {
+            fpuAddress = R[z];
+        } else if ((R[x] + ExtendedBit15To32(i)) == 0x8080888C) {
+            fpuAddress = R[z];
         } else {
           MEM32[R[x] + ExtendedBit15To32(i)] = R[z];
         }
