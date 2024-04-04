@@ -1696,7 +1696,7 @@ int main(int argc, char *argv[]) {
           MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
-          //R[29] = 0x00000010;
+          //R[29] = 0x0000000C;
         }
         
         break;  
@@ -1916,6 +1916,13 @@ int main(int argc, char *argv[]) {
         fprintf(output, "[INVALID INSTRUCTION @ 0x%08X]\n", R[29]);
         printf("[INVALID INSTRUCTION @ 0x%08X]\n", R[29]);
         executa = 0;
+
+        printf("[SOFTWARE INTERRUPTION]\n");
+        fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+        MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
+        MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
+        MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
+        //R[29] = 0x0000000C;
         break;
 
 
