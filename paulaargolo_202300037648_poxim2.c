@@ -326,7 +326,6 @@ int main(int argc, char *argv[]) {
           R[31] = R[31] & ~0b1;
         }
 
-    
 
       // 0x????????:	add rz,rx,ir Rz=Rx+IR=0x????????,SR=0x????????
         sprintf(instrucao, "add %s,%s,%s", getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
@@ -493,6 +492,7 @@ int main(int argc, char *argv[]) {
 
             R[z] = (uint32_t)setRegistrador(z, (tmpMuls_1) & 0xFFFFFFFF);
             
+
             //zn rlrz = 0
             if ((tmpMuls_1) != 0) {
               R[31] = R[31] & ~0b1000000;
@@ -506,6 +506,7 @@ int main(int argc, char *argv[]) {
             } else {
               R[31] = R[31] & ~0b1000;
             }
+
 
            // 0x????????:	muls rl,rz,rx,ry  Rl:Rz=Rx*Ry=0x????????????????,SR=0x????????
             sprintf(instrucao, "muls %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
@@ -545,9 +546,9 @@ int main(int argc, char *argv[]) {
               R[31] = R[31] & ~0b100000;
             } else if (R[y] == 0 || R[31] & 0b10) {
               R[31] = R[31] | 0b100000;
+              R[29] = 0x00000008;
               R[26] = 0;
               R[27] = R[29];
-              R[29] = 0x00000008;
             } else {
               R[31] = R[31] | 0b100000;
             }
@@ -564,7 +565,7 @@ int main(int argc, char *argv[]) {
             fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
             printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
 
-            if (R[y] == 0) {
+            if (R[y] == 0 || R[31] & 0b10) {
               printf("[SOFTWARE INTERRUPTION]\n");
               fprintf(output, "[SOFTWARE INTERRUPTION]\n");
               MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
@@ -709,8 +710,8 @@ int main(int argc, char *argv[]) {
             break;
 
         }
-        break;  
 
+        break;  
 
 
       // sub (tipe U)
@@ -722,7 +723,6 @@ int main(int argc, char *argv[]) {
         y = (R[28] & (0b11111 << 11)) >> 11;
 
         R[z] = (R[x] - R[y]);
-        
 
         //zn rz = 0
         if (R[z] != 0) {
@@ -1943,6 +1943,7 @@ int main(int argc, char *argv[]) {
     
   } 
 
+//meu print esta aparecendo independente de qqr condicao, preciso defini-lo para uma condicao
   printf("[TERMINAL]\n");
   fprintf(output, "[TERMINAL]\n");
 
