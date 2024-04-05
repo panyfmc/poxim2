@@ -512,16 +512,19 @@ int main(int argc, char *argv[]) {
             fprintf(output, "0x%08X:\t%-25s\t%s:%s=%s*%s=0x%016lX,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), tmpMuls_1, R[31]);
             printf("0x%08X:\t%-25s\t%s:%s=%s*%s=0x%016lX,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), tmpMuls_1, R[31]);
             break;
-
+        
 
           // div
           case 0b100:
+
+            cr = R[26]; 
+            ipc = R[27];
             pc = R[29];
             xyl = R[28] & 0b11111;
             z = (R[28] & (0b11111 << 21)) >> 21;
             x = (R[28] & (0b11111 << 16)) >> 16;
             y = (R[28] & (0b11111 << 11)) >> 11;
-
+          
             // R[l]= R[x] % R[y], R[z] = R[x] / R[y]
             if (R[y] == 0) {
               R[31] = R[31] | 0b100000;
@@ -540,13 +543,13 @@ int main(int argc, char *argv[]) {
             // ZD ry = 0
             if (R[y] != 0) {
               R[31] = R[31] & ~0b100000;
+            } else if (R[y] == 0 || R[31] & 0b10) {
+              R[31] = R[31] | 0b100000;
+              R[26] = 0;
+              R[27] = R[29];
+              R[29] = 0x00000008;
             } else {
               R[31] = R[31] | 0b100000;
-              printf("[SOFTWARE INTERRUPTION]\n");
-            fprintf(output, "[SOFTWARE INTERRUPTION]\n");
-            MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
-            MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
-            MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
             }
 
             // CY rl != 0
@@ -560,6 +563,15 @@ int main(int argc, char *argv[]) {
             sprintf(instrucao, "div %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
             fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
             printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+
+            if (R[y] == 0) {
+              printf("[SOFTWARE INTERRUPTION]\n");
+              fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+              MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
+              MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
+              MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
+            }
+
             break;
 
 
