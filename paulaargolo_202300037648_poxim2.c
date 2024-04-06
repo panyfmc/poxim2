@@ -10,7 +10,7 @@ void verifyZero(uint32_t reg, uint32_t teste, uint64_t temp) {
     if (teste == 1) {
     
     } else {
-      temp = temp & 0xFFFFFFFF00000000;
+      temp = temp & 0xFFFFFFFF00000000;  
     }
   } 
 }
@@ -645,6 +645,11 @@ int main(int argc, char *argv[]) {
             // ZD ry = 0
             if (R[y] != 0) {
               R[31] = R[31] & ~0b100000;
+            } else if (R[y] == 0 || R[31] & 0b10) {
+              R[31] = R[31] | 0b100000;
+              R[29] = 0x00000008;
+              R[26] = 0;
+              R[27] = R[29];
             } else {
               R[31] = R[31] | 0b100000;
             }
@@ -660,6 +665,15 @@ int main(int argc, char *argv[]) {
             sprintf(instrucao, "divs %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
             fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
             printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+            
+            if (R[y] == 0 || R[31] & 0b10) {
+              printf("[SOFTWARE INTERRUPTION]\n");
+              fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+              MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
+              MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
+              MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
+            }
+
             break;
 
 
@@ -1085,6 +1099,16 @@ int main(int argc, char *argv[]) {
         sprintf(instrucao, "divi %s,%s,%i", getRegisterSmaller(z), getRegisterSmaller(x), ExtendedBit15To32(i));
         fprintf(output, "0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
         printf("0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
+        
+        if (R[y] == 0 || R[31] & 0b10) {
+
+          printf("[SOFTWARE INTERRUPTION]\n");
+          fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+          MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
+          MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
+          MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
+        }
+
         break;
 
 
@@ -1106,6 +1130,18 @@ int main(int argc, char *argv[]) {
         }
 
         // ZD i = 0
+
+        if (ExtendedBit15To32(i) != 0) {
+              R[31] = R[31] & ~0b100000;
+            } else if (ExtendedBit15To32(i) == 0 || R[31] & 0b10) {
+              R[31] = R[31] | 0b100000;
+              R[29] = 0x00000008;
+              R[26] = 0;
+              R[27] = R[29];
+            } else {
+              R[31] = R[31] | 0b100000;
+            }
+
         if (ExtendedBit15To32(i) != 0) {
           R[31] = R[31] & ~0b100000;
         } else {
@@ -1285,7 +1321,7 @@ int main(int argc, char *argv[]) {
       case 0b011101:
 
         z = (R[28] & (0b11111 << 21)) >> 21;
-        x = (R[28] & (0b11111 << 16)) >> 16;  
+        x = (R[28] & (0b11111 << 16)) >> 16; 
         i = R[28] & 0xFFFF;  
 
        // R[z] = MEM32[R[x] + ExtendedBit15To32(i)];      
@@ -1454,7 +1490,9 @@ int main(int argc, char *argv[]) {
         // IV = 1   
         if (bitIV(R[31]) != 0) {
           R[29] = R[29] + (temp << 2);
-          //R[29] -= 4;
+          R[26] = (R[28] & (0b111111 << 26)) >> 26; 
+          R[29] = 0x00000004;
+          R[27] = R[29];
         }
 
         sprintf(instrucao, "biv %i", temp);
@@ -1532,8 +1570,11 @@ int main(int argc, char *argv[]) {
         // iv = 0
         if ((bitIV(R[31])) == 0) {
           R[29] = R[29] + (temp << 2);
-          //R[29] -= 4;
-        } 
+        } else {
+          R[26] = (R[28] & (0b111111 << 26)) >> 26; 
+          R[29] = 0x00000004;
+          R[27] = R[29];
+        }
 
         sprintf(instrucao, "bni %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
