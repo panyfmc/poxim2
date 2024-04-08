@@ -120,41 +120,112 @@ uint32_t setRegistrador(uint32_t r, uint32_t valor) {
 }
 
 
-bool bitZN(uint32_t R) {
-  // if checkBit32 is 0 or 1
+//ZN 
+bool setZN(uint32_t R) {
   return checkBit32(R, 6);
 }
 
-
 // ZD 5
-bool bitZD(uint32_t R) {
+bool setZD(uint32_t R) {
   return checkBit32(R, 5);
 }
 
 // SN 4
-bool bitSN(uint32_t R) {
+bool setSN(uint32_t R) {
   return checkBit32(R, 4);
 }
 
 // OV 3
-bool bitOV(uint32_t R) {
+bool setOV(uint32_t R) {
   return checkBit32(R, 3);
 }
 
 // IV 2
-bool bitIV(uint32_t R) {
+bool setIV(uint32_t R) {
   return checkBit32(R, 2);
   
 }
 
 //IE 1
-bool bitIE(uint32_t R) {
+bool setIE(uint32_t R) {
     return checkBit32(R, 1);
 }
 
 // CY 0
-bool bitCY(uint32_t R) {
+bool setCY(uint32_t R) {
   return checkBit32(R, 0);
+}
+
+
+//ZN 6
+uint32_t bitZN(uint32_t SR, bool condicao) {
+  if (condicao) {
+      SR = SR | 0b100000;
+  } else {
+      SR = SR & ~0b100000;
+  }
+  return SR;
+}
+
+
+// ZD 5
+uint32_t bitZD(uint32_t SR, bool condicao) {
+  if (condicao) {
+      SR = SR | 0b100000;
+  } else {
+      SR = SR & ~0b100000;
+  }
+  return SR;
+}
+
+// SN 4
+uint32_t bitSN(uint32_t SR, bool condicao) {
+  if (condicao) {
+      SR = SR | 0b10000;
+  } else {
+      SR = SR & ~0b10000;
+  }
+  return SR;
+}
+
+// OV 3
+uint32_t bitOV(uint32_t SR, bool condicao) {
+  if (condicao) {
+      SR = SR | 0b1000;
+  } else {
+      SR = SR & ~0b1000;
+  }
+  return SR;
+}
+
+// IV 2
+uint32_t bitIV(uint32_t SR, bool condicao) {
+  if (condicao) {
+      SR = SR | 0b100;
+  } else {
+      SR = SR & ~0b100;
+  }
+  return SR;
+}
+
+//IE 1
+uint32_t bitIE(uint32_t SR, bool condicao) {
+  if (condicao) {
+      SR = SR | 0b10;
+  } else {
+      SR = SR & ~0b10;
+  }
+  return SR;
+}
+
+// CY 0
+uint32_t bitCY(uint32_t SR, bool condicao) {
+  if (condicao) {
+      SR = SR | 0b1;
+  } else {
+      SR = SR & ~0b1;
+  }
+  return SR;
 }
 
 
@@ -219,8 +290,9 @@ int main(int argc, char *argv[]) {
     char instrucao[30] = {0};
 
     uint8_t z = 0, x = 0, y = 0, v = 0, w = 0;
-    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, addr = 0, shift = 0, hardwareValue = 0, novo_PC, novo_SP, novo_CR, novo_IPC;
+    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, addr = 0, shift = 0, hardwareValue = 0, novo_PC, novo_SP, novo_CR, novo_IPC, SR = 0;
     uint64_t tmpSla_1 = 0, tmpSll_1 = 0,tmpSra_1 = 0, tmpSrl_1 = 0, cmp1 = 0, cmpi1 = 0, tmpMul_1 = 0, tmpMuls_1 = 0, tmpAdd_1 = 0;
+    bool condicao = true;
 
     R[28] = ((MEM8[R[29] + 0] << 24) | (MEM8[R[29] + 1] << 16) | (MEM8[R[29] + 2] << 8) | (MEM8[R[29] + 3] << 0)) | MEM32[R[29] >> 2];
 
@@ -319,32 +391,25 @@ int main(int argc, char *argv[]) {
         R[z] = tmpAdd_1;
 
         //zn rz = 0
+        
         if (R[z] != 0) {
-          R[31] = R[31] & ~0b1000000;
-        } else {
-          R[31] = R[31] | 0b1000000;
+          bitZN(R[31], true);
         }
 
         //sn rz31 = 1
         if ((checkBit64(R[z], 31)) != 0) {
-          R[31] = R[31] | 0b10000;
-        } else {
-          R[31] = R[31] & ~0b10000;
-        }
+          bitSN(R[31], true);
+        } 
 
         //ov Rx31 = Ry31 ^ Rz31 != Rx31
-        if ((checkBit64(R[x], 31) == checkBit64(R[y], 31)) && (checkBit64(R[z], 31) != checkBit64(R[x], 31))) {
-          R[31] = R[31] | 0b1000;
-        } else {
-            R[31] = R[31] & ~0b1000;
-        }
+        if ((checkBit64(R[x], 31) == checkBit64(R[y], 31)) ^ (checkBit64(R[z], 31) != checkBit64(R[x], 31))) {
+          bitOV(R[31], true);
+        } 
 
         //cy rz32 = 1
         if ((checkBit64(R[z], 32)) != 0) {
-          R[31] = R[31] | 0b1;
-        } else {
-          R[31] = R[31] & ~0b1;
-        }
+          bitCY(R[31], true);
+        } 
 
 
       // 0x????????:	add rz,rx,ir Rz=Rx+IR=0x????????,SR=0x????????
@@ -549,7 +614,7 @@ int main(int argc, char *argv[]) {
             // ZD ry = 0
             if (y == 0) {
               R[31] = R[31] | 0b100000;
-              if (bitIE(R[31])) {
+              if (bitIE(R[31], true)) {
                   pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
                   R[26] = 0;
                   R[27] = R[29];
@@ -557,12 +622,12 @@ int main(int argc, char *argv[]) {
 
                   // ZN rz = 0
                   if (R[z] == 0) {
-                    (bitZN(R[31]));
+                    (bitZN(R[31], true));
                   }
 
                   // CY rl != 0
                   if (R[xyl] != 0) {
-                    (bitCY(R[31]));
+                    (bitCY(R[31], true));
                   }
 
                   //0x????????:	div rl,rz,rx,ry          	Rl=Rx%Ry=0x????????,Rz=Rx/Ry=0x????????,SR=0x????????
@@ -751,9 +816,19 @@ int main(int argc, char *argv[]) {
 
 
           default:
-            fprintf(output, "[INVALID INSTRUCTION @ 0x%08X]\n", R[29]);
-            printf("[INVALID INSTRUCTION @ 0x%08X]\n", R[29]);
-            executa = 0;
+
+            pc = R[29]; 
+            fprintf(output, "[INVALID INSTRUCTION @ 0x%08X]\n", pc);
+            printf("[INVALID INSTRUCTION @ 0x%08X]\n", pc);
+            printf("[SOFTWARE INTERRUPTION]\n");
+            fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            (bitIV(R[31], true));
+            R[26] = (R[28] & (0b111111 << 26)) >> 26; 
+            R[27] = R[29];
+            R[29] = 0x00000004;
+            R[29] = R[29] - 4;
             break;
 
         }
@@ -1387,7 +1462,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         // cy = 0
-        if (bitCY(R[31]) == 0) {
+        if (setCY(R[31]) == 0) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         } 
@@ -1406,7 +1481,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         // zn = 0 ^ cy = 0
-        if (((bitZN(R[31])) == 0) && ((bitCY(R[31])) == 0)) {
+        if (((setZN(R[31])) == 0) && (setCY(R[31])) == 0) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         } 
@@ -1425,7 +1500,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         //zn = 1 v cy = 1
-        if (((bitZN(R[31])) != 0) || ((bitCY(R[31])) != 0)) {
+        if (((setZN(R[31])) != 0) || ((setCY(R[31])) != 0)) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         } 
@@ -1444,7 +1519,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         // cy = 1
-        if ((bitCY(R[31])) != 0) {
+        if ((setCY(R[31])) != 0) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         } 
@@ -1464,7 +1539,7 @@ int main(int argc, char *argv[]) {
 
 
         // zn = 1
-        if ((bitZN(R[31])) != 0) {
+        if ((setZN(R[31])) != 0) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         } 
@@ -1483,7 +1558,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         // sn = ov
-        if ((bitSN(R[31])) == (bitOV(R[31]))) {
+        if ((setSN(R[31])) == (setOV(R[31]))) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         } 
@@ -1502,7 +1577,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         // ZN = 0 ^ SN = OV
-        if (((bitZN(R[31])) == 0) && ((bitSN(R[31])) == (bitOV(R[31])))) {
+        if (((setZN(R[31])) == 0) && ((setSN(R[31])) == (setOV(R[31])))) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         } 
@@ -1521,11 +1596,8 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         // IV = 1   
-        if (bitIV(R[31]) != 0) {
+        if (setIV(R[31]) != 0) {
           R[29] = R[29] + (temp << 2);
-          R[26] = (R[28] & (0b111111 << 26)) >> 26; 
-          R[29] = 0x00000004;
-          R[27] = R[29];
         }
 
         sprintf(instrucao, "biv %i", temp);
@@ -1542,7 +1614,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         // ZN = 1 v SN != OV
-        if (((bitZN(R[31])) != 0) || ((bitSN(R[31])) != (bitOV(R[31])))) {
+        if (((setZN(R[31])) != 0) || ((setSN(R[31])) != (setOV(R[31])))) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         } 
@@ -1561,7 +1633,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         // SN != OV
-        if ((bitSN(R[31])) != (bitOV(R[31]))) {
+        if ((setSN(R[31])) != (setOV(R[31]))) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         } 
@@ -1582,7 +1654,7 @@ int main(int argc, char *argv[]) {
         //printf("bneee %d\n", checkBit32(R[31], 6));
 
         // zn = 0
-        if (bitZN(R[31]) == 0) {
+        if (setZN(R[31]) == 0) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         }
@@ -1601,13 +1673,9 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         // iv = 0
-        if ((bitIV(R[31])) == 0) {
+        if ((setIV(R[31])) == 0) {
           R[29] = R[29] + (temp << 2);
-        } else {
-          R[26] = (R[28] & (0b111111 << 26)) >> 26; 
-          R[29] = 0x00000004;
-          R[27] = R[29];
-        }
+        } 
 
         sprintf(instrucao, "bni %i", temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X\n", pc, instrucao, R[29] + 4);
@@ -1623,7 +1691,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         // zd = 0
-        if ((bitZD(R[31])) == 0) {
+        if ((setZD(R[31])) == 0) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         } 
@@ -1660,7 +1728,7 @@ int main(int argc, char *argv[]) {
         temp = ExtendedBit25To32(i);
 
         //ZD = 1
-        if (bitZD(R[31]) != 0) {
+        if (setZD(R[31]) != 0) {
           R[29] = R[29] + (temp << 2);
           //R[29] -= 4;
         }
@@ -1774,8 +1842,8 @@ int main(int argc, char *argv[]) {
         if (i == 0) {
             executa = 0;
             sprintf(instrucao, "int 0");
-            fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000X,PC=0x00000000X\n", pc, instrucao);
-            printf("0x%08X:\t%-25s\tCR=0x00000000X,PC=0x00000000X\n", pc, instrucao);
+            fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", pc, instrucao);
+            printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", pc, instrucao);
         } else {
             pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
             R[26] = i;
@@ -2004,11 +2072,20 @@ int main(int argc, char *argv[]) {
           
 
       default:
-        fprintf(output, "[INVALID INSTRUCTION @ 0x%08X]\n", R[29]);
-        printf("[INVALID INSTRUCTION @ 0x%08X]\n", R[29]);
-        executa = 0;
-        break;
 
+        pc = R[29]; 
+        fprintf(output, "[INVALID INSTRUCTION @ 0x%08X]\n", pc);
+        printf("[INVALID INSTRUCTION @ 0x%08X]\n", pc);
+        printf("[SOFTWARE INTERRUPTION]\n");
+        fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+
+        pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+        (bitIV(R[31], true));
+        R[26] = (R[28] & (0b111111 << 26)) >> 26; 
+        R[27] = R[29];
+        R[29] = 0x00000004;
+        R[29] = R[29] - 4;
+        break;
 
     }
 
@@ -2016,7 +2093,6 @@ int main(int argc, char *argv[]) {
     
   } 
 
-//meu print esta aparecendo independente de qqr condicao, preciso defini-lo para uma condicao
   printf("[TERMINAL]\n");
   fprintf(output, "[TERMINAL]\n");
 
