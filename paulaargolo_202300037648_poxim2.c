@@ -153,6 +153,21 @@ bool bitCY(uint32_t R) {
 }
 
 
+void pilhaISR(uint32_t *MEM, uint32_t CR, uint32_t IPC, uint32_t PC, uint32_t SP, uint32_t SR,
+              uint32_t *novo_PC, uint32_t *novo_SP, uint32_t *novo_CR, uint32_t *novo_IPC) {
+    MEM[SP >> 2] = PC + 4;
+    *novo_SP = SP - 4;
+    MEM[*novo_SP >> 2] = CR;
+    *novo_SP = *novo_SP - 4;
+    MEM[*novo_SP >> 2] = IPC;
+    *novo_SP = *novo_SP - 4;
+
+    *novo_PC = PC + 4;
+    *novo_CR = CR;
+    *novo_IPC = IPC;
+}
+
+
 int main(int argc, char *argv[]) { 
 
   FILE *input = fopen(argv[1], "r");
@@ -199,7 +214,7 @@ int main(int argc, char *argv[]) {
     char instrucao[30] = {0};
 
     uint8_t z = 0, x = 0, y = 0, v = 0, w = 0;
-    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, addr = 0, shift = 0, hardwareValue = 0;
+    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, addr = 0, shift = 0, hardwareValue = 0, novo_PC, novo_SP, novo_CR, novo_IPC;
     uint64_t tmpSla_1 = 0, tmpSll_1 = 0,tmpSra_1 = 0, tmpSrl_1 = 0, cmp1 = 0, cmpi1 = 0, tmpMul_1 = 0, tmpMuls_1 = 0, tmpAdd_1 = 0;
 
     R[28] = ((MEM8[R[29] + 0] << 24) | (MEM8[R[29] + 1] << 16) | (MEM8[R[29] + 2] << 8) | (MEM8[R[29] + 3] << 0)) | MEM32[R[29] >> 2];
@@ -262,8 +277,8 @@ int main(int argc, char *argv[]) {
 
         //0x????????:	mov rz,u                 	Rz=0x????????
         sprintf(instrucao, "mov %s,%i", getRegisterSmaller(z), xyl);
-        fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", pc, instrucao, getRegisterBigger(z), xyl);
-        printf("0x%08X:\t%-25s\t%s=0x%08X\n", pc, instrucao, getRegisterBigger(z), xyl);
+        fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", pc, instrucao, getRegisterBigger(z), R[z]);
+        printf("0x%08X:\t%-25s\t%s=0x%08X\n", pc, instrucao, getRegisterBigger(z), R[z]);
         break;
 
 
@@ -1701,26 +1716,27 @@ int main(int argc, char *argv[]) {
     //reti
       case 0b100000:
 
-        R[29] = R[29] << 2;
         pc = R[29];
-        //cr = R[26];
-        //ipc = R[27];
-        //sp = R[30];
 
-        
-        R[30] += 4;
-        R[27] = MEM32[R[30] >> 2];
-        R[30] += 4;
-        R[26] = MEM32[R[30] >> 2];
-        R[30] += 4;
-        R[29] = MEM32[R[30] >> 2];
+        //pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+
+        novo_SP = novo_SP + 4;
+        novo_IPC = MEM32[novo_SP >> 2];
+        novo_SP = novo_SP + 4;
+        novo_CR = MEM32[novo_SP >> 2];
+        novo_SP = novo_SP + 4;
+        novo_PC = MEM32[novo_SP >> 2]; 
 
         //reti 	
         //IPC=MEM[0x????????]=0x????????,CR=MEM[0x????????]=0x????????,PC=MEM[0x????????]=0x????????
         sprintf(instrucao, "reti");
-        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, (R[30] - 8), R[27], (R[30] - 4), R[26], R[30], R[29]);
-        printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29]);
-        R[29] -= 4;
+        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, novo_SP - 8, novo_IPC, novo_SP - 4, novo_CR, novo_SP, novo_PC);
+        printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, novo_SP - 8, novo_IPC, novo_SP - 4, novo_CR, novo_SP, novo_PC);
+        R[26] = novo_CR;
+        R[27] = novo_IPC;
+        R[29] = novo_PC - 4;
+        R[30] = novo_SP;
+
         break; 
 
 
@@ -1728,34 +1744,32 @@ int main(int argc, char *argv[]) {
     // int
       case 0b111111:
 
+        pc = R[29];
         i = R[28] & 0x3FFFFFF;
+
+        /*i = R[28] & 0x3FFFFFF;
         cr = R[26];
         ipc = R[27];
         pc = R[29];
-        sp = R[30];
+        sp = R[30]; */
         
         if (i == 0) {
-          executa = 0;
-          R[29] = 0 - 4;
-          R[26] = 0; 
-          
+            executa = 0;
+            sprintf(instrucao, "int 0");
+            fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000X,PC=0x00000000X\n", pc, instrucao);
+            printf("0x%08X:\t%-25s\tCR=0x00000000X,PC=0x00000000X\n", pc, instrucao);
         } else {
-          R[26] = i;
-          R[27] = R[29];
-          R[29] = 0x0000000C - 4;
-        }
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            R[26] = i;
+            R[27] = R[29];
+            R[29] = 0x0000000C;
 
-        sprintf(instrucao, "int %d", i);
-        fprintf(output, "0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", pc, instrucao, R[26], R[29] + 4);
-        printf("0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", pc, instrucao, R[26], R[29] + 4);
-
-        if (i != 0) {
-          printf("[SOFTWARE INTERRUPTION]\n");
-          fprintf(output, "[SOFTWARE INTERRUPTION]\n");
-          MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
-          MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
-          MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
-          
+            sprintf(instrucao, "int %u", i);
+            fprintf(output, "0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", pc, instrucao, R[26], R[29]);
+            printf("0x%08X:\t%-25s\tCR=0x%08X,PC=0x%08X\n", pc, instrucao, R[26], R[29]);
+            printf("[SOFTWARE INTERRUPTION]\n");
+            fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+            R[29] = R[29] - 4;
         }
         
         break;  
