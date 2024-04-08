@@ -147,6 +147,11 @@ bool bitIV(uint32_t R) {
   
 }
 
+//IE 1
+bool bitIE(uint32_t R) {
+    return checkBit32(R, 1);
+}
+
 // CY 0
 bool bitCY(uint32_t R) {
   return checkBit32(R, 0);
@@ -540,55 +545,68 @@ int main(int argc, char *argv[]) {
             z = (R[28] & (0b11111 << 21)) >> 21;
             x = (R[28] & (0b11111 << 16)) >> 16;
             y = (R[28] & (0b11111 << 11)) >> 11;
-          
-            // R[l]= R[x] % R[y], R[z] = R[x] / R[y]
-            if (R[y] == 0) {
-              R[31] = R[31] | 0b100000;
-            } else {
-              R[xyl] = ((int)R[x] % R[y]); 
-              R[z] = ((int)(R[x] / R[y]));
-            }
-
-            // ZN rz = 0
-            if (R[z] != 0) {
-              R[31] = R[31] & ~0b1000000;
-            } else {
-              R[31] = R[31] | 0b1000000;
-            }
 
             // ZD ry = 0
-            if (R[y] != 0) {
-              R[31] = R[31] & ~0b100000;
-            } else if (R[y] == 0 || R[31] & 0b10) {
+            if (y == 0) {
               R[31] = R[31] | 0b100000;
-              R[29] = 0x00000008;
-              R[26] = 0;
-              R[27] = R[29];
+              if (bitIE(R[31])) {
+                  pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+                  R[26] = 0;
+                  R[27] = R[29];
+                  R[29] = 0x00000008;
+
+                  // ZN rz = 0
+                  if (R[z] == 0) {
+                    (bitZN(R[31]));
+                  }
+
+                  // CY rl != 0
+                  if (R[xyl] != 0) {
+                    (bitCY(R[31]));
+                  }
+
+                  //0x????????:	div rl,rz,rx,ry          	Rl=Rx%Ry=0x????????,Rz=Rx/Ry=0x????????,SR=0x????????
+                  sprintf(instrucao, "div %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
+                  fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+                  printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+                  printf("[SOFTWARE INTERRUPTION]\n");
+                  fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+                  R[29] = R[29] - 4;
+                  break;
+              }
+
             } else {
-              R[31] = R[31] | 0b100000;
+
+              R[xyl] = ((int)R[x] % R[y]); 
+              R[z] = ((int)(R[x] / R[y]));
+
+              // ZN rz = 0
+              if (R[z] != 0) {
+                R[31] = R[31] & ~0b1000000;
+              } else {
+                R[31] = R[31] | 0b1000000;
+              }
+
+              // ZD ry = 0
+              if (R[y] != 0) {
+                R[31] = R[31] & ~0b100000;
+              } else {
+                R[31] = R[31] | 0b100000;
+              }
+
+              // CY rl != 0
+              if (R[xyl] != 0) {
+                R[31] = R[31] | 0b1;
+              } else {
+                R[31] = R[31] & ~0b1;
+              }
+
+
+              sprintf(instrucao, "div %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
+              fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+              printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+              break;
             }
-
-            // CY rl != 0
-            if (R[xyl] != 0) {
-              R[31] = R[31] | 0b1;
-            } else {
-              R[31] = R[31] & ~0b1;
-            }
-
-            // 0x????????:	div rl,rz,rx,ry        Rl=Rx%Ry=0x????????,Rz=Rx/Ry=0x????????,SR=0x????????
-            sprintf(instrucao, "div %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
-            fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-            printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-
-            if (R[y] == 0 || R[31] & 0b10) {
-              printf("[SOFTWARE INTERRUPTION]\n");
-              fprintf(output, "[SOFTWARE INTERRUPTION]\n");
-              MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
-              MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
-              MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
-            }
-
-            break;
 
 
             // srl
