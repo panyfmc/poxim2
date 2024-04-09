@@ -19,14 +19,14 @@ void verifyZero(uint32_t reg, uint32_t teste, uint64_t temp) {
 // 1 se o bit estiver definido -- 0 se o bit estiver desligado -- -1 se bitPosition for inválido.
 int checkBit32(uint32_t value, int bitPosition) {
     // Cria uma máscara para isolar o bit
-    uint32_t mask = 1ul << bitPosition;
+    uint32_t mask = 1u << bitPosition;
     // Aplica a máscara e verifica se o bit é 0 ou 1
     return (value & mask) != 0;
 }
 
 
 int checkBit64(uint64_t value2, int bitPosition2) {
-    uint64_t mask2 = 1ull << bitPosition2;
+    uint64_t mask2 = 1ul << bitPosition2;
     return (value2 & mask2) != 0;
 }
 
@@ -386,30 +386,38 @@ int main(int argc, char *argv[]) {
 
         //tmpAdd_1 = R[x] + R[y];
 
-        tmpAdd_1 = R[x] + R[y];
+        tmpAdd_1 = (uint64_t)(R[x]) + (uint64_t)(R[y]);
         (uint64_t)(R[z]);
         R[z] = tmpAdd_1;
 
+
         //zn rz = 0
-        
         if (R[z] != 0) {
-          bitZN(R[31], true);
+          R[31] = R[31] & ~0b1000000;
+        } else {
+          R[31] = R[31] | 0b1000000;
         }
 
         //sn rz31 = 1
-        if ((checkBit64(R[z], 31)) != 0) {
-          bitSN(R[31], true);
-        } 
+        if (checkBit64(R[z], 31)) {
+          R[31] = R[31] | 0b10000;
+        } else {
+          R[31] = R[31] & ~0b10000;
+        }
 
         //ov Rx31 = Ry31 ^ Rz31 != Rx31
-        if ((checkBit64(R[x], 31) == checkBit64(R[y], 31)) ^ (checkBit64(R[z], 31) != checkBit64(R[x], 31))) {
-          bitOV(R[31], true);
-        } 
+        if ((checkBit32(R[x], 31) == checkBit32(R[y], 31)) && (checkBit32(R[z], 31) != checkBit32(R[x], 31))) {
+          R[31] = R[31] | 0b1000;
+        } else {
+            R[31] = R[31] & ~0b1000;
+        }
 
         //cy rz32 = 1
-        if ((checkBit64(R[z], 32)) != 0) {
-          bitCY(R[31], true);
-        } 
+        if ((checkBit64(tmpAdd_1, 32)) != 0) {
+          R[31] = R[31] | 0b1;
+        } else {
+          R[31] = R[31] & ~0b1;
+        }
 
 
       // 0x????????:	add rz,rx,ir Rz=Rx+IR=0x????????,SR=0x????????
