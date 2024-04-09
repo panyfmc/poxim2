@@ -26,7 +26,7 @@ int checkBit32(uint32_t value, int bitPosition) {
 
 
 int checkBit64(uint64_t value2, int bitPosition2) {
-    uint64_t mask2 = 1ul << bitPosition2;
+    uint64_t mask2 = 1ull << bitPosition2;
     return (value2 & mask2) != 0;
 }
 
