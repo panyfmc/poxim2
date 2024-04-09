@@ -1390,14 +1390,6 @@ int main(int argc, char *argv[]) {
         addr = R[x] + i;
         shift = (8 * (3 - (addr % 4)));  
 
-			  switch (addr) {
-
-			  case 0x8080888F:
-
-          R[z] = fpuStatusAndOperation;
-          R[26] = 0;
-          R[27] = 0;
-          break;
 
         /*default:
           R[z] = ((MEM32[addr >> 2]) & (0xFF << (shift))) >> shift; 
@@ -1461,7 +1453,7 @@ int main(int argc, char *argv[]) {
         shift = (8 * (3 - (addr % 4))); 
 
 
-			  switch (addr) {
+		switch (addr) {
           // FPU
           case 0x80808880:
             fpuX = R[z];
@@ -1477,9 +1469,9 @@ int main(int argc, char *argv[]) {
 
           case 0x8080888F:
 
-				    fpuStatusAndOperation = R[z];
-				    fpuOperation = fpuStatusAndOperation & 0b11111;
-				    fpuLastOperation = fpuOperation;
+            fpuStatusAndOperation = R[z];
+            fpuOperation = fpuStatusAndOperation & 0b11111;
+            fpuLastOperation = fpuOperation;
 
             if (fpuOperation >= 0b1 && fpuOperation <= 0b100) {      //estiver entre 1 e 4, então o número de ciclos é calculado chamando a função calcular n° ciclos
               numberOfCycles = calcularNumeroDeCiclos(fpuX, fpuY);
@@ -1488,24 +1480,24 @@ int main(int argc, char *argv[]) {
             }
             break;
 
-			    case 0x88888888:
-				  //Terminal
+          case 0x88888888:
+            //Terminal
 
             terminal = R[z];
             if (count == caps) {
-              caps = caps << 1;
-              teste = (char*)(realloc(teste, caps));
+                caps = caps << 1;
+                teste = (char*)(realloc(teste, caps));
             }
             teste[count] = terminal;
             count++;
-				    break;
+			break;
 
 
-			    default:
+		  default:
 
-				    shift = (8 * (3 - (addr % 4))); 
-				    break;
-			  }
+            shift = (8 * (3 - (addr % 4))); 
+            break;
+		}
 
 
         //0x????????:	s8 [rx+-s],rz            	MEM[0x????????]=Rz=0x??
@@ -2220,8 +2212,7 @@ int main(int argc, char *argv[]) {
 
     } //fim do switch case
 
-    //fpu
-      
+    //fpu    shift = (8 * (3 - (addr % 4))); 
     if ((numberOfCycles == 0) && (fpuOperation != 0) && (setIE(R[31]))) {
       fpuStatusAndOperation = 0;
       switch (fpuOperation) {
@@ -2238,7 +2229,6 @@ int main(int argc, char *argv[]) {
          
           fpuZ = fpuX + fpuY;
           shiftIEEE = true;
-
 
           
           break;
@@ -2384,9 +2374,9 @@ int main(int argc, char *argv[]) {
 
           break;
 
+      }
       fpuOperation = 0;
       R[29] = R[29] - 4;
-      }
     }
 
     // Decrementando o número de ciclos
