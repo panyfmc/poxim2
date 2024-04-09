@@ -263,6 +263,18 @@ void pilhaISR(uint32_t *MEM, uint32_t CR, uint32_t IPC, uint32_t PC, uint32_t SP
 }
 
 
+// Função para configurar o estado do registrador FPU
+void statusFpu(uint8_t fpuSTandOP, bool OneOrZero) {
+    const uint8_t PRONTO = 0; // Representa o estado "PRONTO"
+    const uint8_t ERRO = 0b100000; // Representa o estado "ERRO"
+    if (OneOrZero) {
+      fpuSTandOP |= ERRO; // Faz a operação OR bit a bit com o estado "ERRO"
+    } else {
+      fpuSTandOP &= ~ERRO; // Faz a operação AND bit a bit com o complemento do estado "ERRO"
+    }
+}
+
+
 int main(int argc, char *argv[]) { 
 
   FILE *input = fopen(argv[1], "r");
@@ -350,20 +362,6 @@ int main(int argc, char *argv[]) {
         watchdog -= 1;
       }
     }
-
-
-    /*fpu 
-    if (fpuAddress == 0b1 || fpuAddress == 0b10 || fpuAddress == 0b11 || fpuAddress == 0b100) {
-      fpuAddress = 0;
-      printf("[HARDWARE INTERRUPTION 3]\n");
-      fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
-      MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
-      MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
-      MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
-      R[29] = 0x00000018;
-      R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
-      R[27] = R[29]; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
-    } */
 
      
     switch (opcode) 
@@ -758,54 +756,68 @@ int main(int argc, char *argv[]) {
             x = (R[28] & (0b11111 << 16)) >> 16;
             y = (R[28] & (0b11111 << 11)) >> 11;
 
-            // R[l]= R[x] % R[y], R[z] = R[x] / R[y]
-            if (R[y] == 0) {
+        
+            // ZD ry = 0
+            if (y == 0) {
               R[31] = R[31] | 0b100000;
+              if (bitIE(R[31], true)) {
+                pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+                R[26] = 0;
+                R[27] = R[29];
+                R[29] = 0x00000008;
+
+                // ZN rz = 0
+                if (R[z] == 0) {
+                  (bitZN(R[31], true));
+                }
+
+                // OV rl != 0
+                if (R[xyl] != 0) {
+                  (bitOV(R[31], true));
+                }
+
+                // 0x????????:	divs rl,rz,rx,ry // Rl=Rx%Ry=0x????????,Rz=Rx/Ry=0x????????,SR=0x????????
+                sprintf(instrucao, "divs %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
+                fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+                printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+                printf("[SOFTWARE INTERRUPTION]\n");
+                fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+                R[29] = R[29] - 4;
+                break;
+              }  
             } else {
+
               R[xyl] = ((int)R[x] % R[y]); 
               R[z] = ((int)(R[x] / R[y]));
+
+              // ZN rz = 0
+              if (R[z] != 0) {
+                R[31] = R[31] & ~0b1000000;
+              } else {
+                R[31] = R[31] | 0b1000000;
+              }
+
+              // ZD ry = 0
+              if (R[y] != 0) {
+                R[31] = R[31] & ~0b100000;
+              } else {
+                R[31] = R[31] | 0b100000;
+              }
+
+              // OV rl != 0
+              if (R[xyl] != 0) {
+                R[31] = R[31] | 0b1000;
+              } else {
+                R[31] = R[31] & ~0b1000;
+              }
+
+
+              sprintf(instrucao, "divs %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
+              fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+              printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+              break;
             }
 
-            // ZN rz = 0
-            if (R[z] != 0) {
-              R[31] = R[31] & ~0b1000000;
-            } else {
-              R[31] = R[31] | 0b1000000;
-            }
-
-            // ZD ry = 0
-            if (R[y] != 0) {
-              R[31] = R[31] & ~0b100000;
-            } else if (R[y] == 0 || R[31] & 0b10) {
-              R[31] = R[31] | 0b100000;
-              R[29] = 0x00000008;
-              R[26] = 0;
-              R[27] = R[29];
-            } else {
-              R[31] = R[31] | 0b100000;
-            }
-
-            // ov rl != 0
-            if (R[xyl] != 0) {
-              R[31] = R[31] | 0b1000;
-            } else {
-              R[31] = R[31] & ~0b1000;
-            }
-
-            // 0x????????:	divs rl,rz,rx,ry // Rl=Rx%Ry=0x????????,Rz=Rx/Ry=0x????????,SR=0x????????
-            sprintf(instrucao, "divs %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
-            fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-            printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-            
-            if (R[y] == 0 || R[31] & 0b10) {
-              printf("[SOFTWARE INTERRUPTION]\n");
-              fprintf(output, "[SOFTWARE INTERRUPTION]\n");
-              MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
-              MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
-              MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
-            }
-
-            break;
 
 
           // sra
@@ -1216,41 +1228,63 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16; 
         i = R[28] & 0xFFFF;
 
-        R[z] = (R[x] / ExtendedBit15To32(i));
-        
-      // ZN rz = 0
-        if (R[z] != 0) {
-          R[31] = R[31] & ~0b1000000;
+        // ZD i = 0
+        if (i == 0) {
+          R[31] = R[31] | 0b100000;
+          if (bitIE(R[31], true)) {
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            R[26] = 0;
+            R[27] = R[29];
+            R[29] = 0x00000008;
+
+            // ZN rz = 0
+            if (R[z] != 0) {
+              R[31] = R[31] & ~0b1000000;
+            } else {
+              R[31] = R[31] | 0b1000000;
+            }
+
+            // OV rl != 0
+            R[31] = R[31] & ~0b1000;
+            
+
+            //0x????????:	divi rz,rx,s             	Rz=Rx/0x????????=0x????????,SR=0x????????
+            sprintf(instrucao, "divi %s,%s,%i", getRegisterSmaller(z), getRegisterSmaller(x), ExtendedBit15To32(i));
+            fprintf(output, "0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
+            printf("0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
+            printf("[SOFTWARE INTERRUPTION]\n");
+            fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+            R[29] = R[29] - 4;
+            break;
+          }  
         } else {
+
+          R[z] = (R[x] / ExtendedBit15To32(i));
+
+          // ZN rz = 0
+          if (R[z] != 0) {
+            R[31] = R[31] & ~0b1000000;
+          } else {
             R[31] = R[31] | 0b1000000;
-        }
+          }
 
-          // ZD ry = 0
-        if (ExtendedBit15To32(i) != 0) {
-          R[31] = R[31] & ~0b100000;
-        } else {
+          // ZD i = 0
+          if (ExtendedBit15To32(i) != 0) {
+            R[31] = R[31] & ~0b100000;
+          } else {
             R[31] = R[31] | 0b100000;
+          }
+
+          // OV rl != 0
+          R[31] = R[31] & ~0b1000;
+
+
+          //0x????????:	divi rz,rx,s             	Rz=Rx/0x????????=0x????????,SR=0x????????
+          sprintf(instrucao, "divi %s,%s,%i", getRegisterSmaller(z), getRegisterSmaller(x), ExtendedBit15To32(i));
+          fprintf(output, "0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
+          printf("0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
+          break;
         }
-
-        // ov rl != 0
-        R[31] = R[31] & ~0b1000;
-        
-
-      //0x????????:	divi rz,rx,s             	Rz=Rx/0x????????=0x????????,SR=0x????????
-        sprintf(instrucao, "divi %s,%s,%i", getRegisterSmaller(z), getRegisterSmaller(x), ExtendedBit15To32(i));
-        fprintf(output, "0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
-        printf("0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
-        
-        if (R[y] == 0 || R[31] & 0b10) {
-
-          printf("[SOFTWARE INTERRUPTION]\n");
-          fprintf(output, "[SOFTWARE INTERRUPTION]\n");
-          MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
-          MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
-          MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
-        }
-
-        break;
 
 
      //modi
@@ -2199,6 +2233,178 @@ int main(int argc, char *argv[]) {
         R[29] = R[29] - 4;
         break;
 
+      //fpu
+
+      if ((numberOfCycles == 0) && (fpuOperation != 0) && (setIE(R[31]))) {
+        fpuStatusAndOperation = 0;
+        switch (fpuOperation) {
+
+  //		  0b00001 Adição Z = X + Y
+          case 0b1:
+            fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
+            printf("[HARDWARE INTERRUPTION 3]\n");
+
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            R[26] = 0x01EEE754; // CR = i
+            R[27] = R[29]; // IPC = PC
+            R[29] = 0x18; // PC = 0x18
+            fpuZ = fpuX + fpuY;
+            shiftIEEE = true;
+
+            break;
+
+    //				0b10 Subtração Z = X − Y
+          case 0b00010:
+
+            fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
+            printf("[HARDWARE INTERRUPTION 3]\n");
+
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            R[26] = 0x01EEE754; // CR = i
+            R[27] = R[29]; // IPC = PC
+            R[29] = 0x18; // PC = 0x18
+            fpuZ = fpuX - fpuY;
+            shiftIEEE = true;
+
+            break;
+
+    //				00011 Multiplicação Z = X × Y
+          case 0b00011:
+            fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
+            printf("[HARDWARE INTERRUPTION 3]\n");
+
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            R[26] = 0x01EEE754; // CR = i
+            R[27] = R[29]; // IPC = PC
+            R[29] = 0x18; // PC = 0x18
+            fpuZ = fpuX * fpuY;
+            shiftIEEE = true;
+
+            break;
+
+    //				00100 Divisão Z = X ÷ Y
+          case 0b00100:
+
+            if (fpuY != 0) {
+
+              fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
+              printf("[HARDWARE INTERRUPTION 3]\n");
+              pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+              R[26] = 0x01EEE754; // CR = i
+              R[27] = R[29]; // IPC = PC
+              R[29] = 0x18; // PC = 0x18
+              fpuZ = fpuX / fpuY;
+              shiftIEEE = true;
+
+            } else {
+
+              fprintf(output, "[HARDWARE INTERRUPTION 2]\n");
+              printf("[HARDWARE INTERRUPTION 2]\n");
+
+              pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+              R[26] = 0x01EEE754; // CR = i
+              R[27] = R[29]; // IPC = PC
+              R[29] = 0x14;
+
+              statusFpu(fpuStatusAndOperation, true);
+            }
+
+            break;
+
+    //				0b00101 Atribuição X = Z
+          case 0b00101:
+            fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
+            printf("[HARDWARE INTERRUPTION 4]\n");
+
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            R[26] = 0x01EEE754; // CR = i
+            R[27] = R[29]; // IPC = PC
+            R[29] = 0x1C; // PC = 0x1C
+            fpuX = fpuZ;
+
+            shiftIEEEOfX = (shiftIEEE != 0) ? true : false;
+
+            break;
+
+    //				0b00110 Atribuição Y = Z
+          case 0b00110:
+            fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
+            printf("[HARDWARE INTERRUPTION 4]\n");
+
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            R[26] = 0x01EEE754; // CR = i
+            R[27] = R[29]; // IPC = PC
+            R[29] = 0x1C; // PC = 0x1C
+            fpuY = fpuZ;
+
+            shiftIEEEOfY = (shiftIEEE != 0) ? true : false;
+
+            break;
+
+    //				0b00111 Teto ⌈Z⌉
+          case 0b00111:
+            fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
+            printf("[HARDWARE INTERRUPTION 4]\n");
+
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            R[26] = 0x01EEE754; // CR = i
+            R[27] = R[29]; // IPC = PC
+            R[29] = 0x1C; // PC = 0x1C
+            shiftIEEE = false;
+
+            break;
+
+    //				0b01000 Piso ⌊Z⌋
+          case 0b01000:
+
+            fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
+            printf("[HARDWARE INTERRUPTION 4]\n");
+
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            R[26] = 0x01EEE754; // CR = i
+            R[27] = R[29]; // IPC = PC
+            R[29] = 0x1C; // PC = 0x1C
+            shiftIEEE = false;
+
+            break;
+
+    //				0b01001 Arredondamento ∥Z ∥
+          case 0b01001:
+            fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
+            printf("[HARDWARE INTERRUPTION 4]\n");
+
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            R[26] = 0x01EEE754; // CR = i
+            R[27] = R[29]; // IPC = PC
+            R[29] = 0x1C; // PC = 0x1C
+            shiftIEEE = false;
+
+            break;
+            // invalid
+          default:
+            fprintf(output, "[HARDWARE INTERRUPTION 2]\n");
+            printf("[HARDWARE INTERRUPTION 2]\n");
+            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            R[26] = 0x01EEE754; // CR = i
+            R[27] = R[29]; // IPC = PC
+            R[29] = 0x14; // PC = 0x14
+
+            // Error
+            statusFpu(fpuStatusAndOperation, true);
+
+            break;
+        }
+
+        fpuOperation = 0;
+        R[29] = R[29] - 4;
+
+      }
+
+    }
+
+    // Decrementando o número de ciclos
+    if (numberOfCycles != 0) {
+      numberOfCycles--;
     }
 
     R[29] = R[29] + 4;
