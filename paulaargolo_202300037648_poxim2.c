@@ -382,7 +382,7 @@ int main(int argc, char *argv[]) {
         break;
 
 
-    // movs (tipe U)
+      // movs (tipe U)
       case 0b000001:
         pc = R[29];
         z = (R[28] & (0b11111 << 21)) >> 21;
@@ -877,7 +877,6 @@ int main(int argc, char *argv[]) {
             break;
 
         }
-
         break;  
 
 
@@ -1256,6 +1255,7 @@ int main(int argc, char *argv[]) {
             fprintf(output, "[SOFTWARE INTERRUPTION]\n");
             R[29] = R[29] - 4;
             break;
+
           }  
         } else {
 
@@ -1388,25 +1388,20 @@ int main(int argc, char *argv[]) {
         i = R[28] & 0xFFFF;
 
         addr = R[x] + i;
-        shift = (8 * (3 - (addr % 4)));   
+        shift = (8 * (3 - (addr % 4)));  
 
-        R[z] = ((MEM32[addr >> 2]) & (0xFF << (shift))) >> shift; 
+			  switch (addr) {
 
-        switch (addr) {
-          case 0x8080888F:
+			  case 0x8080888F:
 
-            R[z] = fpuStatusAndOperation;
-            R[26] = 0;
-            R[27] = 0;
-            break;
+          R[z] = fpuStatusAndOperation;
+          R[26] = 0;
+          R[27] = 0;
+          break;
 
-
-          default:
-
-            R[z] = ((MEM32[addr >> 2]) & (0xFF << (shift))) >> shift; 
-            break;
-        }
-        
+        /*default:
+          R[z] = ((MEM32[addr >> 2]) & (0xFF << (shift))) >> shift; 
+          break; */
 
         sprintf(instrucao, "l8 %s,[%s%s%i]", getRegisterSmaller(z), getRegisterSmaller(x), (i >= 0) ? ("+") : (""), i);
         fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
@@ -1454,7 +1449,7 @@ int main(int argc, char *argv[]) {
         break;
 
 
-      //s8
+      // s8
       case 0b011011:
 
         z = (R[28] & (0b11111 << 21)) >> 21;
@@ -1483,18 +1478,17 @@ int main(int argc, char *argv[]) {
           case 0x8080888F:
 
 				    fpuStatusAndOperation = R[z];
-
 				    fpuOperation = fpuStatusAndOperation & 0b11111;
 				    fpuLastOperation = fpuOperation;
 
-            if (fpuOperation >= 0b1 && fpuOperation <= 0b100) {
+            if (fpuOperation >= 0b1 && fpuOperation <= 0b100) {      //estiver entre 1 e 4, então o número de ciclos é calculado chamando a função calcular n° ciclos
               numberOfCycles = calcularNumeroDeCiclos(fpuX, fpuY);
             } else {
               numberOfCycles = 1;
             }
             break;
 
-			    case 0x8888888B:
+			    case 0x88888888:
 				  //Terminal
 
             terminal = R[z];
@@ -1902,7 +1896,7 @@ int main(int argc, char *argv[]) {
         sprintf(instrucao, "call [r%u%s%i]", x, (i >= 0) ? ("+") : (""), temp);
         fprintf(output, "0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", pc, instrucao, R[29] + 4, sp, MEM32[sp >> 2]);
         printf("0x%08X:\t%-25s\tPC=0x%08X,MEM[0x%08X]=0x%08X\n", pc, instrucao, R[29] + 4, sp, MEM32[sp >> 2]);
-
+        break;
 
 
       //call tipe S
@@ -1949,7 +1943,6 @@ int main(int argc, char *argv[]) {
       case 0b100000:
 
         pc = R[29];
-
         //pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
 
         novo_SP = novo_SP + 4;
@@ -1968,9 +1961,7 @@ int main(int argc, char *argv[]) {
         R[27] = novo_IPC;
         R[29] = novo_PC - 4;
         R[30] = novo_SP;
-
         break; 
-
 
 
     // int
@@ -1978,12 +1969,6 @@ int main(int argc, char *argv[]) {
 
         pc = R[29];
         i = R[28] & 0x3FFFFFF;
-
-        /*i = R[28] & 0x3FFFFFF;
-        cr = R[26];
-        ipc = R[27];
-        pc = R[29];
-        sp = R[30]; */
         
         if (i == 0) {
             executa = 0;
@@ -2065,7 +2050,7 @@ int main(int argc, char *argv[]) {
           }
         }
 
-      // 0x????????:	push rv,rw,rx,ry,rz	MEM[0x????????]{0x????????,0x????????,0x????????,0x????????,0x????????}={Rv,Rw,Rx,Ry,Rz}
+        // 0x????????:	push rv,rw,rx,ry,rz	MEM[0x????????]{0x????????,0x????????,0x????????,0x????????,0x????????}={Rv,Rw,Rx,Ry,Rz}
         if (contador_1 == 1) {
           sprintf(instrucao, "push %s", getRegisterSmaller(v));
           fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X}={%s}\n", pc, instrucao, sp, R[v], getRegisterBigger(v));
@@ -2114,7 +2099,7 @@ int main(int argc, char *argv[]) {
 
         uint8_t contador2 = 0;
 
-      //R[30] = R[30] + 4, R[i] =  MEM32[R[30]]
+        //R[30] = R[30] + 4, R[i] =  MEM32[R[30]]
 
         if (v != 0)
         {
@@ -2157,7 +2142,7 @@ int main(int argc, char *argv[]) {
           }
         }
 
-//0x????????:	pop rv,rw,rx,ry,rz 	{Rv,Rw,Rx,Ry,Rz}=MEM[0x????????]{0x????????,0x????????,0x????????,0x????????,0x????????}
+          //0x????????:	pop rv,rw,rx,ry,rz 	{Rv,Rw,Rx,Ry,Rz}=MEM[0x????????]{0x????????,0x????????,0x????????,0x????????,0x????????}
         if (contador2 == 1) {
           sprintf(instrucao, "pop %s", getRegisterSmaller(v));
           fprintf(output, "0x%08X:\t%-25s\t{%s}=MEM[0x%08X]{0x%08X}\n", pc, instrucao, getRegisterBigger(v), sp, R[v]);
@@ -2228,178 +2213,180 @@ int main(int argc, char *argv[]) {
         pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
         (bitIV(R[31], true));
         R[26] = (R[28] & (0b111111 << 26)) >> 26; 
-        R[27] = R[29];
+        R[27] = pc;
         R[29] = 0x00000004;
         R[29] = R[29] - 4;
         break;
 
-      //fpu
+    } //fim do switch case
 
-      if ((numberOfCycles == 0) && (fpuOperation != 0) && (setIE(R[31]))) {
-        fpuStatusAndOperation = 0;
-        switch (fpuOperation) {
+    //fpu
+      
+    if ((numberOfCycles == 0) && (fpuOperation != 0) && (setIE(R[31]))) {
+      fpuStatusAndOperation = 0;
+      switch (fpuOperation) {
 
-  //		  0b00001 Adição Z = X + Y
-          case 0b1:
+    //		  0b00001 Adição Z = X + Y
+        case 0b1:
+          fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
+          printf("[HARDWARE INTERRUPTION 3]\n");
+
+          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+          R[29] = 0x00000018;
+          R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+         
+          fpuZ = fpuX + fpuY;
+          shiftIEEE = true;
+
+
+          
+          break;
+
+  //				0b10 Subtração Z = X − Y
+        case 0b00010:
+
+          fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
+          printf("[HARDWARE INTERRUPTION 3]\n");
+
+          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+          R[29] = 0x00000018;
+          R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+          fpuZ = fpuX - fpuY;
+          shiftIEEE = true;
+
+          break;
+
+  //				00011 Multiplicação Z = X × Y
+        case 0b00011:
+          fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
+          printf("[HARDWARE INTERRUPTION 3]\n");
+
+          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+          R[29] = 0x00000018;
+          R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+          fpuZ = fpuX * fpuY;
+          shiftIEEE = true;
+
+          break;
+
+  //				00100 Divisão Z = X ÷ Y
+        case 0b00100:
+
+          if (fpuY != 0) {
+
             fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
             printf("[HARDWARE INTERRUPTION 3]\n");
-
             pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-            R[26] = 0x01EEE754; // CR = i
-            R[27] = R[29]; // IPC = PC
-            R[29] = 0x18; // PC = 0x18
-            fpuZ = fpuX + fpuY;
+            R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+            R[29] = 0x00000018;
+            R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+            fpuZ = fpuX / fpuY;
             shiftIEEE = true;
 
-            break;
+          } else {
 
-    //				0b10 Subtração Z = X − Y
-          case 0b00010:
-
-            fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
-            printf("[HARDWARE INTERRUPTION 3]\n");
-
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-            R[26] = 0x01EEE754; // CR = i
-            R[27] = R[29]; // IPC = PC
-            R[29] = 0x18; // PC = 0x18
-            fpuZ = fpuX - fpuY;
-            shiftIEEE = true;
-
-            break;
-
-    //				00011 Multiplicação Z = X × Y
-          case 0b00011:
-            fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
-            printf("[HARDWARE INTERRUPTION 3]\n");
-
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-            R[26] = 0x01EEE754; // CR = i
-            R[27] = R[29]; // IPC = PC
-            R[29] = 0x18; // PC = 0x18
-            fpuZ = fpuX * fpuY;
-            shiftIEEE = true;
-
-            break;
-
-    //				00100 Divisão Z = X ÷ Y
-          case 0b00100:
-
-            if (fpuY != 0) {
-
-              fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
-              printf("[HARDWARE INTERRUPTION 3]\n");
-              pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-              R[26] = 0x01EEE754; // CR = i
-              R[27] = R[29]; // IPC = PC
-              R[29] = 0x18; // PC = 0x18
-              fpuZ = fpuX / fpuY;
-              shiftIEEE = true;
-
-            } else {
-
-              fprintf(output, "[HARDWARE INTERRUPTION 2]\n");
-              printf("[HARDWARE INTERRUPTION 2]\n");
-
-              pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-              R[26] = 0x01EEE754; // CR = i
-              R[27] = R[29]; // IPC = PC
-              R[29] = 0x14;
-
-              statusFpu(fpuStatusAndOperation, true);
-            }
-
-            break;
-
-    //				0b00101 Atribuição X = Z
-          case 0b00101:
-            fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
-            printf("[HARDWARE INTERRUPTION 4]\n");
-
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-            R[26] = 0x01EEE754; // CR = i
-            R[27] = R[29]; // IPC = PC
-            R[29] = 0x1C; // PC = 0x1C
-            fpuX = fpuZ;
-
-            shiftIEEEOfX = (shiftIEEE != 0) ? true : false;
-
-            break;
-
-    //				0b00110 Atribuição Y = Z
-          case 0b00110:
-            fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
-            printf("[HARDWARE INTERRUPTION 4]\n");
-
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-            R[26] = 0x01EEE754; // CR = i
-            R[27] = R[29]; // IPC = PC
-            R[29] = 0x1C; // PC = 0x1C
-            fpuY = fpuZ;
-
-            shiftIEEEOfY = (shiftIEEE != 0) ? true : false;
-
-            break;
-
-    //				0b00111 Teto ⌈Z⌉
-          case 0b00111:
-            fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
-            printf("[HARDWARE INTERRUPTION 4]\n");
-
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-            R[26] = 0x01EEE754; // CR = i
-            R[27] = R[29]; // IPC = PC
-            R[29] = 0x1C; // PC = 0x1C
-            shiftIEEE = false;
-
-            break;
-
-    //				0b01000 Piso ⌊Z⌋
-          case 0b01000:
-
-            fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
-            printf("[HARDWARE INTERRUPTION 4]\n");
-
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-            R[26] = 0x01EEE754; // CR = i
-            R[27] = R[29]; // IPC = PC
-            R[29] = 0x1C; // PC = 0x1C
-            shiftIEEE = false;
-
-            break;
-
-    //				0b01001 Arredondamento ∥Z ∥
-          case 0b01001:
-            fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
-            printf("[HARDWARE INTERRUPTION 4]\n");
-
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-            R[26] = 0x01EEE754; // CR = i
-            R[27] = R[29]; // IPC = PC
-            R[29] = 0x1C; // PC = 0x1C
-            shiftIEEE = false;
-
-            break;
-            // invalid
-          default:
             fprintf(output, "[HARDWARE INTERRUPTION 2]\n");
             printf("[HARDWARE INTERRUPTION 2]\n");
+
             pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-            R[26] = 0x01EEE754; // CR = i
-            R[27] = R[29]; // IPC = PC
-            R[29] = 0x14; // PC = 0x14
-
-            // Error
+            R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+            R[29] = 0x00000014;
+            R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
             statusFpu(fpuStatusAndOperation, true);
+          }
 
-            break;
-        }
+          break;
 
-        fpuOperation = 0;
-        R[29] = R[29] - 4;
+  //				0b00101 Atribuição X = Z
+        case 0b00101:
+          fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
+          printf("[HARDWARE INTERRUPTION 4]\n");
 
+          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+          R[29] = 0x0000001C;
+          R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+          fpuX = fpuZ;
+
+          shiftIEEEOfX = (shiftIEEE != 0) ? true : false;
+
+          break;
+
+  //				0b00110 Atribuição Y = Z
+        case 0b00110:
+          fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
+          printf("[HARDWARE INTERRUPTION 4]\n");
+
+          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+          R[29] = 0x0000001C;
+          R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+          fpuY = fpuZ;
+
+          shiftIEEEOfY = (shiftIEEE != 0) ? true : false;
+
+          break;
+
+  //				0b00111 Teto ⌈Z⌉
+        case 0b00111:
+          fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
+          printf("[HARDWARE INTERRUPTION 4]\n");
+
+          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+          R[29] = 0x0000001C;
+          R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+          shiftIEEE = false;
+
+          break;
+
+    //				0b01000 Piso ⌊Z⌋
+        case 0b01000:
+
+          fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
+          printf("[HARDWARE INTERRUPTION 4]\n");
+
+          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+          R[29] = 0x0000001C;
+          R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+          shiftIEEE = false;
+
+          break;
+
+    //				0b01001 Arredondamento ∥Z ∥
+        case 0b01001:
+          fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
+          printf("[HARDWARE INTERRUPTION 4]\n");
+
+          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+          R[29] = 0x0000001C;
+          R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+          shiftIEEE = false;
+          break;
+
+
+          // invalid
+        default:
+          fprintf(output, "[HARDWARE INTERRUPTION 2]\n");
+          printf("[HARDWARE INTERRUPTION 2]\n");
+          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+          R[29] = 0x00000014;
+          R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+
+          // Error
+          statusFpu(fpuStatusAndOperation, true);
+
+          break;
+
+      fpuOperation = 0;
+      R[29] = R[29] - 4;
       }
-
     }
 
     // Decrementando o número de ciclos
