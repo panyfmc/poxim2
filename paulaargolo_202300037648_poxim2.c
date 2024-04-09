@@ -1515,63 +1515,48 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16; 
         i = R[28] & 0xFFFF;  
         pc = R[29];
+        
 
-        addr = MEM32[R[x] + ExtendedBit15To32(i)];
+        addr = ((R[x] + ExtendedBit15To32(i)) << 2);
 
-			  switch (addr) {
-          // FPU
-          case 0x80808880:
-            fpuX = R[z];
-            break;
+        switch (addr) {
+        // FPU
+        case 0x80808880:
+          fpuX = R[z];
+          break;
 
-          case 0x80808884:
-            fpuY = R[z];
-            break;
+        case 0x80808884:
+          fpuY = R[z];
+          break;
 
-          case 0x80808888:
-            fpuZ = R[z];
-            break;
+        case 0x80808888:
+          fpuZ = R[z];
+          break;
 
-          case 0x8080888F:
+        case 0x8080888C:
+          fpuStatusAndOperation = R[z];
+          fpuLastOperation = fpuStatusAndOperation & 0b11111;
+          fpuLastOperation = fpuOperation;
+          if (fpuOperation >= 0b1 && fpuOperation <= 0b00100) {
+            numberOfCycles = calcularNumeroDeCiclos(fpuX, fpuY);
+          } else {
+            // Invalid instruction
+            numberOfCycles = 1;
+          }
 
-				    fpuStatusAndOperation = R[z];
+          break;
 
-				    fpuOperation = fpuStatusAndOperation & 0b11111;
-				    fpuLastOperation = fpuOperation;
-
-            if (fpuOperation >= 0b1 && fpuOperation <= 0b100) {
-              numberOfCycles = calcularNumeroDeCiclos(fpuX, fpuY);
-            } else {
-              numberOfCycles = 1;
-            }
-            break;
-
-			    case 0x80808080:
-				  //Watchdog
-
-            watchdog = R[z];
-            counter = (0x7FFFFFFF & watchdog);
-				    break;
-
-			    default:
-
-				    MEM32[R[x] + ExtendedBit15To32(i)] = R[z]; 
-				    break;
-			  }
-
-       /* R[z] = MEM32[R[x] + ExtendedBit15To32(i)];      
-        if  ((R[x] + ExtendedBit15To32(i)) == 0x20202020) {
+          // Watchdog
+        case 0x80808080:
           watchdog = R[z];
           counter = (0x7FFFFFFF & watchdog);
-        } else if ((R[x] + ExtendedBit15To32(i)) == 0x20202220) {
-            fpuAddress = R[z];
-        } else if ((R[x] + ExtendedBit15To32(i)) == 0x20202221) {
-            fpuAddress = R[z];
-        } else if ((R[x] + ExtendedBit15To32(i)) == 0x20202223) {
-            fpuAddress = R[z];
-        } else {
-          MEM32[R[x] + ExtendedBit15To32(i)] = R[z];
-        } */
+          break;
+          
+        default:
+          // Regular memory
+          MEM32[addr >> 2] = R[z];
+          break;
+        }
                
 
         //0x????????:	s32 [rx+-s],rz           	MEM[0x????????]=Rz=0x???????? 
