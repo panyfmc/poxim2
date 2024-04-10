@@ -1387,13 +1387,25 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16;
         i = R[28] & 0xFFFF;
 
-        addr = R[x] + i;
-        shift = (8 * (3 - (addr % 4)));  
+        addr = R[x] + ExtendedBit15To32(i);
+        shift = (8 * (3 - (addr % 4))); 
+         
 
+        if  (addr == 0x20202020) {
+            R[z] = watchdog;
+        } else if (addr == 20202220) {
+            R[z] = fpuX;
+        } else if (addr == 20202221) {
+            R[z] = fpuY;
+        } else if (addr == 20202222) {
+            R[z] = fpuZ;
+        } else if (addr == 20202223) {
+            R[z] = fpuStatusAndOperation;
+        } else {
+            R[z] = (MEM32[addr >> 2] & (0xFF << shift)) >> shift; 
+        }
 
-        /*default:
-          R[z] = ((MEM32[addr >> 2]) & (0xFF << (shift))) >> shift; 
-          break; */
+        
 
         sprintf(instrucao, "l8 %s,[%s%s%i]", getRegisterSmaller(z), getRegisterSmaller(x), (i >= 0) ? ("+") : (""), i);
         fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
@@ -1408,15 +1420,15 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16;
         i = R[28] & 0xFFFF;
 
-        addr = R[x] + i;
+        addr = R[x] + ExtendedBit15To32(i);
         shift = (16 * (1 - (addr % 2))); 
         R[z] = ((MEM32[addr >> 1]) & (0xFFFF << (shift))) >> shift; 
 
 
       //0x????????:	l16 rz,[rx+-s]           	Rz=MEM[0x????????]=0x????
         sprintf(instrucao, "l16 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
-        fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%04X\n", R[29], instrucao, z, (R[x] + i) << 1, R[z]);
-        printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%04X\n", R[29], instrucao, z, (R[x] + i) << 1, R[z]);
+        fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%04X\n", R[29], instrucao, z, (addr) << 1, R[z]);
+        printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%04X\n", R[29], instrucao, z, (addr + i) << 1, R[z]);
         break;
 
 
@@ -1426,18 +1438,46 @@ int main(int argc, char *argv[]) {
         z = (R[28] & (0b11111 << 21)) >> 21;
         x = (R[28] & (0b11111 << 16)) >> 16;
         i = R[28] & 0xFFFF;
+        pc = R[29];
+
+        addr = (R[x] + ExtendedBit15To32(i));
+
+        sprintf(instrucao, "l32 %s,[%s%s%i]", getRegisterSmaller(z), getRegisterSmaller(x), (i >= 0) ? ("+") : (""), i);
         
         //R[z] = MEM32[R[x] + ExtendedBit15To32(i)]; 
-        if  (R[x] + ExtendedBit15To32(i) == 0x20202020) {
+        if  (addr == 0x20202020) {
           R[z] = watchdog;
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+        } else if (addr == 0x20202220) {
+          R[z] = fpuX;
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+        } else if (addr == 0x20202221) {
+          R[z] = fpuY;
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+        } else if (addr == 0x20202222) {
+          R[z] = fpuZ;
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+        } else if (addr == 0x20202223) {
+          R[z] = fpuStatusAndOperation;
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+          /*fpuLastOperation = fpuStatusAndOperation & 0b11111;
+          fpuLastOperation = fpuOperation;
+          if (fpuOperation >= 0b1 && fpuOperation <= 0b100) {
+            numberOfCycles = calcularNumeroDeCiclos(fpuX, fpuY);
+          } else {
+            numberOfCycles = 1;  // Invalid instruction
+          } */
         } else {
-          R[z] = MEM32[R[x] + ExtendedBit15To32(i)];
+          R[z] = MEM32[addr];
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
         }
-
-
-        sprintf(instrucao, "l32 r%u,[r%u%s%i]", z, x, (i >= 0) ? ("+") : (""), i);
-        fprintf(output, "0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", R[29], instrucao, z, (R[x] + i) << 2, R[z]);
-        printf("0x%08X:\t%-25s\tR%u=MEM[0x%08X]=0x%08X\n", R[29], instrucao, z, (R[x] + i) << 2, R[z]);
+           
         break;
 
 
@@ -1553,7 +1593,7 @@ int main(int argc, char *argv[]) {
           fpuZ = R[z];
           break;
 
-        case 0x8080888C:
+        case 0x8080888F:
           fpuStatusAndOperation = R[z];
           fpuLastOperation = fpuStatusAndOperation & 0b11111;
           fpuLastOperation = fpuOperation;
@@ -2217,7 +2257,7 @@ int main(int argc, char *argv[]) {
       fpuStatusAndOperation = 0;
       switch (fpuOperation) {
 
-    //		  0b00001 Adição Z = X + Y
+        //0b00001 Adição Z = X + Y
         case 0b1:
           fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
           printf("[HARDWARE INTERRUPTION 3]\n");
@@ -2233,7 +2273,7 @@ int main(int argc, char *argv[]) {
           
           break;
 
-  //				0b10 Subtração Z = X − Y
+        //0b10 Subtração Z = X − Y
         case 0b00010:
 
           fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
@@ -2248,7 +2288,7 @@ int main(int argc, char *argv[]) {
 
           break;
 
-  //				00011 Multiplicação Z = X × Y
+        //00011 Multiplicação Z = X × Y
         case 0b00011:
           fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
           printf("[HARDWARE INTERRUPTION 3]\n");
@@ -2262,7 +2302,7 @@ int main(int argc, char *argv[]) {
 
           break;
 
-  //				00100 Divisão Z = X ÷ Y
+        //00100 Divisão Z = X ÷ Y
         case 0b00100:
 
           if (fpuY != 0) {
@@ -2290,7 +2330,7 @@ int main(int argc, char *argv[]) {
 
           break;
 
-  //				0b00101 Atribuição X = Z
+        //0b00101 Atribuição X = Z
         case 0b00101:
           fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
           printf("[HARDWARE INTERRUPTION 4]\n");
@@ -2305,7 +2345,7 @@ int main(int argc, char *argv[]) {
 
           break;
 
-  //				0b00110 Atribuição Y = Z
+        //0b00110 Atribuição Y = Z
         case 0b00110:
           fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
           printf("[HARDWARE INTERRUPTION 4]\n");
@@ -2320,7 +2360,7 @@ int main(int argc, char *argv[]) {
 
           break;
 
-  //				0b00111 Teto ⌈Z⌉
+        //0b00111 Teto ⌈Z⌉
         case 0b00111:
           fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
           printf("[HARDWARE INTERRUPTION 4]\n");
@@ -2333,7 +2373,7 @@ int main(int argc, char *argv[]) {
 
           break;
 
-    //				0b01000 Piso ⌊Z⌋
+        //0b01000 Piso ⌊Z⌋
         case 0b01000:
 
           fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
@@ -2347,7 +2387,7 @@ int main(int argc, char *argv[]) {
 
           break;
 
-    //				0b01001 Arredondamento ∥Z ∥
+        //0b01001 Arredondamento ∥Z ∥
         case 0b01001:
           fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
           printf("[HARDWARE INTERRUPTION 4]\n");
@@ -2360,7 +2400,7 @@ int main(int argc, char *argv[]) {
           break;
 
 
-          // invalid
+        // invalid
         default:
           fprintf(output, "[HARDWARE INTERRUPTION 2]\n");
           printf("[HARDWARE INTERRUPTION 2]\n");
@@ -2374,19 +2414,21 @@ int main(int argc, char *argv[]) {
 
           break;
 
-      }
+      } //fim do switch do fpu
+
       fpuOperation = 0;
       R[29] = R[29] - 4;
-    }
+
+    } //fim do fpu
 
     // Decrementando o número de ciclos
     if (numberOfCycles != 0) {
       numberOfCycles--;
-    }
+    } 
 
     R[29] = R[29] + 4;
     
-  } 
+  } //fim do while 
 
   printf("[TERMINAL]\n");
   fprintf(output, "[TERMINAL]\n");
@@ -2401,4 +2443,4 @@ int main(int argc, char *argv[]) {
   fclose(input);
   fclose(output);
   return 0;
-}
+} //fim do int main
