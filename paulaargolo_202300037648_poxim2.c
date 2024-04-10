@@ -296,16 +296,16 @@ int main(int argc, char *argv[]) {
   
   //FPU
   float fpuX = 0; // 0x80808880
-	float fpuY = 0; // 0x80808884
-	float fpuZ = 0; // 0x80808888
-	uint8_t fpuStatusAndOperation = 0; // 0x8080888F
-	uint8_t fpuOperation = 0;
-	uint8_t numberOfCycles = 0;
-	bool shiftIEEE = false;
-	bool shiftIEEEOfX = false;
-	bool shiftIEEEOfY = false;
-	uint8_t fpuLastOperation = 0;
-	uint32_t fpuRounded = 0;
+  float fpuY = 0; // 0x80808884
+  float fpuZ = 0; // 0x80808888
+  uint8_t fpuStatusAndOperation = 0; // 0x8080888F
+  uint8_t fpuOperation = 0;
+  uint8_t numberOfCycles = 0;
+  bool shiftIEEE = false;
+  bool shiftIEEEOfX = false;
+  bool shiftIEEEOfY = false;
+  uint8_t fpuLastOperation = 0;
+  float roundedValueFpu = 0;
 
   uint8_t *MEM8 = (uint8_t*)(calloc(32, 1024));
   uint32_t *MEM32 = (uint32_t*)(calloc(32, 1024));
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
     char instrucao[30] = {0};
 
     uint8_t z = 0, x = 0, y = 0, v = 0, w = 0;
-    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, addr = 0, shift = 0, hardwareValue = 0, novo_PC, novo_SP, novo_CR, novo_IPC, SR = 0;
+    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, addr = 0, shift = 0, hardwareValue = 0, novo_PC, novo_SP, novo_CR, novo_IPC, SR = 0, uint32_Rz = 0;
     uint64_t tmpSla_1 = 0, tmpSll_1 = 0,tmpSra_1 = 0, tmpSrl_1 = 0, cmp1 = 0, cmpi1 = 0, tmpMul_1 = 0, tmpMuls_1 = 0, tmpAdd_1 = 0;
     bool condicao = true;
 
@@ -351,9 +351,9 @@ int main(int argc, char *argv[]) {
           MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
           MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
+          R[27] = R[29]; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           R[29] = 0x00000010;
           R[26] = 0xE1AC04DA; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
-          R[27] = R[29]; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           watchdog_pending = false;
           continue;
         }
@@ -1381,35 +1381,44 @@ int main(int argc, char *argv[]) {
 
     // l8
       case 0b011000:
-
         pc = R[29];
         z = (R[28] & (0b11111 << 21)) >> 21;
         x = (R[28] & (0b11111 << 16)) >> 16;
         i = R[28] & 0xFFFF;
 
         addr = R[x] + ExtendedBit15To32(i);
+        //printf("0x%08X\n", addr);
         shift = (8 * (3 - (addr % 4))); 
-         
-
-        if  (addr == 0x20202020) {
-            R[z] = watchdog;
-        } else if (addr == 20202220) {
-            R[z] = fpuX;
-        } else if (addr == 20202221) {
-            R[z] = fpuY;
-        } else if (addr == 20202222) {
-            R[z] = fpuZ;
-        } else if (addr == 20202223) {
-            R[z] = fpuStatusAndOperation;
-        } else {
-            R[z] = (MEM32[addr >> 2] & (0xFF << shift)) >> shift; 
-        }
-
-        
-
         sprintf(instrucao, "l8 %s,[%s%s%i]", getRegisterSmaller(z), getRegisterSmaller(x), (i >= 0) ? ("+") : (""), i);
-        fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
-        printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
+
+        if  (addr == 0x80808080) {
+          //printf("watchdog\n");
+          R[z] = watchdog;
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
+
+        } else if (addr == 0x80808888) {
+          //printf("fpuZ\n");
+          R[z] = fpuZ;
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
+
+        } else if (addr == 0x8080888F) {
+          //printf("fpustatusoperation\n");
+          R[26] = 0;
+          R[27] = 0;
+          R[z] = fpuStatusAndOperation;
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
+
+        } else {
+          //printf("MEMl8\n");
+          R[z] = ((MEM32[addr >> 2]) & (0xFF << (shift))) >> shift;  
+          
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
+        }
+        
         break;
 
 
@@ -1440,46 +1449,93 @@ int main(int argc, char *argv[]) {
         i = R[28] & 0xFFFF;
         pc = R[29];
 
-        addr = (R[x] + ExtendedBit15To32(i));
+        addr = R[x] + i;
 
         sprintf(instrucao, "l32 %s,[%s%s%i]", getRegisterSmaller(z), getRegisterSmaller(x), (i >= 0) ? ("+") : (""), i);
-        
-        //R[z] = MEM32[R[x] + ExtendedBit15To32(i)]; 
+
         if  (addr == 0x20202020) {
+          //printf("WATCHDOG\n");
           R[z] = watchdog;
           fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+
         } else if (addr == 0x20202220) {
+          //printf("FPUX\n");
           R[z] = fpuX;
-          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
-          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+          memcpy(&uint32_Rz, &fpuX, sizeof(uint32_t));
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEEOfX ? uint32_Rz : R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEEOfX ? uint32_Rz : R[z]);
+
         } else if (addr == 0x20202221) {
+          //printf("FPUY\n");
           R[z] = fpuY;
-          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
-          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+          memcpy(&uint32_Rz, &fpuY, sizeof(uint32_t));
+          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEEOfY ? uint32_Rz : R[z]);
+          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEEOfY ? uint32_Rz : R[z]);
+
         } else if (addr == 0x20202222) {
+          //printf("FPU COM LAST OPERATION\n");
           R[z] = fpuZ;
-          fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
-          printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+          if (fpuLastOperation == 7 || fpuLastOperation == 8 || fpuLastOperation == 9) { 
+
+            switch (fpuLastOperation) {
+            //teto
+              case 0b111:
+                //printf("TETO\n");
+                roundedValueFpu = ceil(fpuZ);
+                memcpy(&uint32_Rz, &roundedValueFpu, sizeof(uint32_t));
+                fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
+                printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
+                break;
+
+              //piso
+              case 0b1000:
+                //printf("PIS0\n");
+                roundedValueFpu = floor(fpuZ); 
+                memcpy(&uint32_Rz, &roundedValueFpu, sizeof(uint32_t));
+                fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
+                printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
+                break;
+
+              //arredondamento
+              case 0b1001:
+                //printf("ARREDONDAMENTO\n");
+                roundedValueFpu = round(fpuZ);
+                memcpy(&uint32_Rz, &roundedValueFpu, sizeof(uint32_t));
+                fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
+                printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
+                break;
+                
+              default:
+                printf("DEFAULT");   
+                break; 
+
+            } //fim do switch
+
+          } else {
+            //printf("FPU Z\n");
+            R[z] = fpuZ;
+            memcpy(&uint32_Rz, &fpuZ, sizeof(uint32_t));
+            fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEE ? uint32_Rz : R[z]);
+            printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEE ? uint32_Rz : R[z]);
+          }
+            
+
         } else if (addr == 0x20202223) {
+          //printf("FPU STATUS 20202223\n");
           R[z] = fpuStatusAndOperation;
           fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
-          /*fpuLastOperation = fpuStatusAndOperation & 0b11111;
-          fpuLastOperation = fpuOperation;
-          if (fpuOperation >= 0b1 && fpuOperation <= 0b100) {
-            numberOfCycles = calcularNumeroDeCiclos(fpuX, fpuY);
-          } else {
-            numberOfCycles = 1;  // Invalid instruction
-          } */
+          
         } else {
+          //printf("MEMORIA\n");
           R[z] = MEM32[addr];
           fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
+          
         }
-           
         break;
-
+        
 
       // s8
       case 0b011011:
@@ -2252,7 +2308,7 @@ int main(int argc, char *argv[]) {
 
     } //fim do switch case
 
-    //fpu    shift = (8 * (3 - (addr % 4))); 
+    //fpu    
     if ((numberOfCycles == 0) && (fpuOperation != 0) && (setIE(R[31]))) {
       fpuStatusAndOperation = 0;
       switch (fpuOperation) {
