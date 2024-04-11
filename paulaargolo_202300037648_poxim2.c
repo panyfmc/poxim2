@@ -247,20 +247,31 @@ uint32_t bitCY(uint32_t SR, bool condicao) {
   return SR;
 }
 
+void pilhaISR(uint32_t* R, uint32_t* MEM) {
+  MEM[R[30] >> 2] = R[29] + 4;
+  R[30] -= 4;
+  MEM[R[30] >> 2] = R[26];
+  R[30] -= 4;
+  MEM[R[30] >> 2] = R[27];
+  R[30] -= 4;
+}
 
-void pilhaISR(uint32_t *MEM, uint32_t CR, uint32_t IPC, uint32_t PC, uint32_t SP, uint32_t SR,
-              uint32_t *novo_PC, uint32_t *novo_SP, uint32_t *novo_CR, uint32_t *novo_IPC) {
-    MEM[SP >> 2] = PC + 4;
-    *novo_SP = SP - 4;
-    MEM[*novo_SP >> 2] = CR;
-    *novo_SP = *novo_SP - 4;
-    MEM[*novo_SP >> 2] = IPC;
-    *novo_SP = *novo_SP - 4;
+/*void pilhaISR(uint32_t *MEM, uint32_t CR, uint32_t IPC, uint32_t PC, uint32_t SP, uint32_t SR,uint32_t *novo_PC, uint32_t *novo_SP, uint32_t *novo_CR, uint32_t *novo_IPC) {
+    uint32_t memoryfpu;
+    memoryfpu = MEM[SP >> 2];
+    memoryfpu = PC + 4;
+    SP = SP - 4;
+    memoryfpu = CR;
+    SP = SP - 4;
+    memoryfpu = IPC;
+    SP = SP - 4;
 
     *novo_PC = PC + 4;
     *novo_CR = CR;
     *novo_IPC = IPC;
-}
+    *novo_SP = SP;
+    
+} */
 
 
 // Função para configurar o estado do registrador FPU
@@ -285,6 +296,9 @@ int main(int argc, char *argv[]) {
   //WATCHDOG 
   uint32_t watchdog = 0, counter = 0;
   bool watchdog_pending = false;
+
+  //fpu
+  //int fpuVector [*MEM32[R[30] >> 2]];
 
 
   //TERMINAL
@@ -327,7 +341,7 @@ int main(int argc, char *argv[]) {
     char instrucao[30] = {0};
 
     uint8_t z = 0, x = 0, y = 0, v = 0, w = 0;
-    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, addr = 0, shift = 0, hardwareValue = 0, novo_PC, novo_SP, novo_CR, novo_IPC, SR = 0, uint32_Rz = 0;
+    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, addr = 0, shift = 0, hardwareValue = 0, novo_PC, novo_SP, novo_CR, novo_IPC, memoryFpu, SR = 0, uint32_Rz = 0;
     uint64_t tmpSla_1 = 0, tmpSll_1 = 0,tmpSra_1 = 0, tmpSrl_1 = 0, cmp1 = 0, cmpi1 = 0, tmpMul_1 = 0, tmpMuls_1 = 0, tmpAdd_1 = 0;
     bool condicao = true;
 
@@ -646,7 +660,7 @@ int main(int argc, char *argv[]) {
             if (y == 0) {
               R[31] = R[31] | 0b100000;
               if (bitIE(R[31], true)) {
-                  pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+                  pilhaISR(R, MEM32);
                   R[26] = 0;
                   R[27] = R[29];
                   R[29] = 0x00000008;
@@ -761,7 +775,7 @@ int main(int argc, char *argv[]) {
             if (y == 0) {
               R[31] = R[31] | 0b100000;
               if (bitIE(R[31], true)) {
-                pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+                pilhaISR(R, MEM32);
                 R[26] = 0;
                 R[27] = R[29];
                 R[29] = 0x00000008;
@@ -868,7 +882,7 @@ int main(int argc, char *argv[]) {
             printf("[SOFTWARE INTERRUPTION]\n");
             fprintf(output, "[SOFTWARE INTERRUPTION]\n");
 
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            pilhaISR(R, MEM32);
             (bitIV(R[31], true));
             R[26] = (R[28] & (0b111111 << 26)) >> 26; 
             R[27] = R[29];
@@ -1231,7 +1245,7 @@ int main(int argc, char *argv[]) {
         if (i == 0) {
           R[31] = R[31] | 0b100000;
           if (bitIE(R[31], true)) {
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            pilhaISR(R, MEM32);
             R[26] = 0;
             R[27] = R[29];
             R[29] = 0x00000008;
@@ -1392,7 +1406,6 @@ int main(int argc, char *argv[]) {
         sprintf(instrucao, "l8 %s,[%s%s%i]", getRegisterSmaller(z), getRegisterSmaller(x), (i >= 0) ? ("+") : (""), i);
 
         if  (addr == 0x80808080) {
-          //printf("watchdog\n");
           R[z] = watchdog;
           fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
@@ -2031,25 +2044,21 @@ int main(int argc, char *argv[]) {
       case 0b100000:
 
         pc = R[29];
-        //pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
-        
 
-        novo_SP = novo_SP + 4;
-        novo_IPC = MEM32[novo_SP >> 2];
-        novo_SP = novo_SP + 4;
-        novo_CR = MEM32[novo_SP >> 2];
-        novo_SP = novo_SP + 4;
-        novo_PC = MEM32[novo_SP >> 2]; 
+        R[30] += 4;
+        R[27] = MEM32[R[30] >> 2];
+        R[30] += 4;
+        R[26] = MEM32[R[30] >> 2];
+        R[30] += 4;
+        R[29] = MEM32[R[30] >> 2]; 
 
         //reti 	
         //IPC=MEM[0x????????]=0x????????,CR=MEM[0x????????]=0x????????,PC=MEM[0x????????]=0x????????
         sprintf(instrucao, "reti");
-        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, novo_SP - 8, novo_IPC, novo_SP - 4, novo_CR, novo_SP, novo_PC);
-        printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, novo_SP - 8, novo_IPC, novo_SP - 4, novo_CR, novo_SP, novo_PC);
-        R[26] = novo_CR;
-        R[27] = novo_IPC;
-        R[29] = novo_PC - 4;
-        R[30] = novo_SP;
+        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29]);
+        printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29]);
+        R[29] -= 4;
+    
         break; 
 
 
@@ -2065,7 +2074,7 @@ int main(int argc, char *argv[]) {
             fprintf(output, "0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", pc, instrucao);
             printf("0x%08X:\t%-25s\tCR=0x00000000,PC=0x00000000\n", pc, instrucao);
         } else {
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            pilhaISR(R, MEM32);
             R[26] = i;
             R[27] = R[29];
             R[29] = 0x0000000C;
@@ -2294,7 +2303,7 @@ int main(int argc, char *argv[]) {
         printf("[SOFTWARE INTERRUPTION]\n");
         fprintf(output, "[SOFTWARE INTERRUPTION]\n");
 
-        pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+        pilhaISR(R, MEM32);
         (bitIV(R[31], true));
         R[26] = (R[28] & (0b111111 << 26)) >> 26; 
         R[27] = pc;
@@ -2314,14 +2323,14 @@ int main(int argc, char *argv[]) {
           fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
           printf("[HARDWARE INTERRUPTION 3]\n");
 
-          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          pilhaISR(R, MEM32);
           R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           R[29] = 0x00000018;
           R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
          
           fpuZ = fpuX + fpuY;
           shiftIEEE = true;
-
+          
           
           break;
 
@@ -2331,7 +2340,7 @@ int main(int argc, char *argv[]) {
           fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
           printf("[HARDWARE INTERRUPTION 3]\n");
 
-          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          pilhaISR(R, MEM32);
           R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           R[29] = 0x00000018;
           R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
@@ -2345,7 +2354,7 @@ int main(int argc, char *argv[]) {
           fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
           printf("[HARDWARE INTERRUPTION 3]\n");
 
-          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          pilhaISR(R, MEM32);
           R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           R[29] = 0x00000018;
           R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
@@ -2361,7 +2370,7 @@ int main(int argc, char *argv[]) {
 
             fprintf(output, "[HARDWARE INTERRUPTION 3]\n");
             printf("[HARDWARE INTERRUPTION 3]\n");
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            pilhaISR(R, MEM32);
             R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
             R[29] = 0x00000018;
             R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
@@ -2373,7 +2382,7 @@ int main(int argc, char *argv[]) {
             fprintf(output, "[HARDWARE INTERRUPTION 2]\n");
             printf("[HARDWARE INTERRUPTION 2]\n");
 
-            pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+            pilhaISR(R, MEM32);
             R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
             R[29] = 0x00000014;
             R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
@@ -2387,7 +2396,7 @@ int main(int argc, char *argv[]) {
           fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
           printf("[HARDWARE INTERRUPTION 4]\n");
 
-          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          pilhaISR(R, MEM32);
           R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           R[29] = 0x0000001C;
           R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
@@ -2402,7 +2411,7 @@ int main(int argc, char *argv[]) {
           fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
           printf("[HARDWARE INTERRUPTION 4]\n");
 
-          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          pilhaISR(R, MEM32);
           R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           R[29] = 0x0000001C;
           R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
@@ -2417,7 +2426,7 @@ int main(int argc, char *argv[]) {
           fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
           printf("[HARDWARE INTERRUPTION 4]\n");
 
-          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          pilhaISR(R, MEM32);
           R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           R[29] = 0x0000001C;
           R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
@@ -2431,7 +2440,7 @@ int main(int argc, char *argv[]) {
           fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
           printf("[HARDWARE INTERRUPTION 4]\n");
 
-          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          pilhaISR(R, MEM32);
           R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           R[29] = 0x0000001C;
           R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
@@ -2444,7 +2453,7 @@ int main(int argc, char *argv[]) {
           fprintf(output, "[HARDWARE INTERRUPTION 4]\n");
           printf("[HARDWARE INTERRUPTION 4]\n");
 
-          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          pilhaISR(R, MEM32);
           R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           R[29] = 0x0000001C;
           R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
@@ -2456,7 +2465,7 @@ int main(int argc, char *argv[]) {
         default:
           fprintf(output, "[HARDWARE INTERRUPTION 2]\n");
           printf("[HARDWARE INTERRUPTION 2]\n");
-          pilhaISR(MEM32, R[26], R[27], R[29], R[30], R[31], &novo_PC, &novo_SP, &novo_CR, &novo_IPC);
+          pilhaISR(R, MEM32);
           R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
           R[29] = 0x00000014;
           R[26] = 0x01EEE754; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
