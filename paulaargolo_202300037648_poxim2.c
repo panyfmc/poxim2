@@ -2142,28 +2142,28 @@ int main(int argc, char *argv[]) {
         // 0x????????:	push rv,rw,rx,ry,rz	MEM[0x????????]{0x????????,0x????????,0x????????,0x????????,0x????????}={Rv,Rw,Rx,Ry,Rz}
         if (contador_1 == 1) {
           sprintf(instrucao, "push %s", getRegisterSmaller(v));
-          fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X}={%s}\n", pc, instrucao, R[30], R[v], getRegisterBigger(v));
-          printf("0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X}={%s}\n", pc, instrucao, R[30], R[v], getRegisterBigger(v));
+          fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X}={%s}\n", pc, instrucao, sp, R[v], getRegisterBigger(v));
+          printf("0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X}={%s}\n", pc, instrucao, sp, R[v], getRegisterBigger(v));
 
         } else if (contador_1 == 2) {
           sprintf(instrucao, "push %s,%s", getRegisterSmaller(v), getRegisterSmaller(w));
-          fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X}={%s,%s}\n", pc, instrucao, R[30], R[v], R[w], getRegisterBigger(v), getRegisterBigger(w));
-          printf("0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X}={%s,%s}\n", pc, instrucao, R[30], R[v], R[w], getRegisterBigger(v), getRegisterBigger(w));
+          fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X}={%s,%s}\n", pc, instrucao, sp, R[v], R[w], getRegisterBigger(v), getRegisterBigger(w));
+          printf("0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X}={%s,%s}\n", pc, instrucao, sp, R[v], R[w], getRegisterBigger(v), getRegisterBigger(w));
 
         } else if (contador_1 == 3) {
           sprintf(instrucao, "push %s,%s,%s", getRegisterSmaller(v), getRegisterSmaller(w), getRegisterSmaller(x));
-          fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X}={%s,%s,%s}\n", pc, instrucao, R[30], R[v], R[w], R[x], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x));
-          printf("0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X}={%s,%s,%s}\n", pc, instrucao, R[30], R[v], R[w], R[x], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x));
+          fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X}={%s,%s,%s}\n", pc, instrucao, sp, R[v], R[w], R[x], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x));
+          printf("0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X}={%s,%s,%s}\n", pc, instrucao, sp, R[v], R[w], R[x], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x));
 
         } else if (contador_1 == 4) {
           sprintf(instrucao, "push %s,%s,%s,%s", getRegisterSmaller(v), getRegisterSmaller(w), getRegisterSmaller(x), getRegisterSmaller(y));
-          fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X}={%s,%s,%s,%s}\n", pc, instrucao, R[30], R[v], R[w], R[x], R[y], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y));
-          printf("0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X}={%s,%s,%s,%s}\n", pc, instrucao, R[30], R[v], R[w], R[x], R[y], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y));
+          fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X}={%s,%s,%s,%s}\n", pc, instrucao, sp, R[v], R[w], R[x], R[y], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y));
+          printf("0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X}={%s,%s,%s,%s}\n", pc, instrucao, sp, R[v], R[w], R[x], R[y], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y));
 
         } else if (contador_1 == 5) {
           sprintf(instrucao, "push %s,%s,%s,%s,%s", getRegisterSmaller(v), getRegisterSmaller(w), getRegisterSmaller(x), getRegisterSmaller(y), getRegisterSmaller(z));
-          fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X,0x%08X}={%s,%s,%s,%s,%s}\n", pc, instrucao, R[30], R[v], R[w], R[x], R[y], R[z], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), getRegisterBigger(z));
-          printf("0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X,0x%08X}={%s,%s,%s,%s,%s}\n", pc, instrucao, R[30], R[v], R[w], R[x], R[y], R[z], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), getRegisterBigger(z));
+          fprintf(output, "0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X,0x%08X}={%s,%s,%s,%s,%s}\n", pc, instrucao, sp, R[v], R[w], R[x], R[y], R[z], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), getRegisterBigger(z));
+          printf("0x%08X:\t%-25s\tMEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X,0x%08X}={%s,%s,%s,%s,%s}\n", pc, instrucao, sp, R[v], R[w], R[x], R[y], R[z], getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), getRegisterBigger(z));
 
         } else {
           sprintf(instrucao, "push, -");
@@ -2229,32 +2229,32 @@ int main(int argc, char *argv[]) {
           //0x????????:	pop rv,rw,rx,ry,rz 	{Rv,Rw,Rx,Ry,Rz}=MEM[0x????????]{0x????????,0x????????,0x????????,0x????????,0x????????}
         if (contador2 == 1) {
           sprintf(instrucao, "pop %s", getRegisterSmaller(v));
-          fprintf(output, "0x%08X:\t%-25s\t{%s}=MEM[0x%08X]{0x%08X}\n", pc, instrucao, getRegisterBigger(v), R[30], R[v]);
-          printf("0x%08X:\t%-25s\t{%s}=MEM[0x%08X]{0x%08X}\n", pc, instrucao, getRegisterBigger(v), R[30], R[v]);
+          fprintf(output, "0x%08X:\t%-25s\t{%s}=MEM[0x%08X]{0x%08X}\n", pc, instrucao, getRegisterBigger(v), sp, R[v]);
+          printf("0x%08X:\t%-25s\t{%s}=MEM[0x%08X]{0x%08X}\n", pc, instrucao, getRegisterBigger(v), sp, R[v]);
 
         } else if (contador2 == 2) {
           sprintf(instrucao, "pop %s,%s", getRegisterSmaller(v), getRegisterSmaller(w));
-          fprintf(output, "0x%08X:\t%-25s\t{%s,%s}=MEM[0x%08X]{0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), R[30], R[v], R[w]);
-          printf("0x%08X:\t%-25s\t{%s,%s}=MEM[0x%08X]{0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), R[30], R[v], R[w]);
+          fprintf(output, "0x%08X:\t%-25s\t{%s,%s}=MEM[0x%08X]{0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), sp, R[v], R[w]);
+          printf("0x%08X:\t%-25s\t{%s,%s}=MEM[0x%08X]{0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), sp, R[v], R[w]);
 
         } else if (contador2 == 3) {
           sprintf(instrucao, "pop %s,%s,%s", getRegisterSmaller(v), getRegisterSmaller(w), getRegisterSmaller(x));
-          fprintf(output, "0x%08X:\t%-25s\t{%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), R[30], R[v], R[w], R[x]);
-          printf("0x%08X:\t%-25s\t{%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), R[30], R[v], R[w], R[x]);
+          fprintf(output, "0x%08X:\t%-25s\t{%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), sp, R[v], R[w], R[x]);
+          printf("0x%08X:\t%-25s\t{%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), sp, R[v], R[w], R[x]);
 
         } else if (contador2 == 4) {
           sprintf(instrucao, "pop %s,%s,%s,%s", getRegisterSmaller(v), getRegisterSmaller(w), getRegisterSmaller(x), getRegisterSmaller(y));
-          fprintf(output, "0x%08X:\t%-25s\t{%s,%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), R[30], R[v], R[w], R[x], R[y]);
-          printf("0x%08X:\t%-25s\t{%s,%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), R[30], R[v], R[w], R[x], R[y]);
+          fprintf(output, "0x%08X:\t%-25s\t{%s,%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), sp, R[v], R[w], R[x], R[y]);
+          printf("0x%08X:\t%-25s\t{%s,%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), sp, R[v], R[w], R[x], R[y]);
 
         } else if (contador2 == 5) {
           sprintf(instrucao, "pop %s,%s,%s,%s,%s", getRegisterSmaller(v), getRegisterSmaller(w), getRegisterSmaller(x), getRegisterSmaller(y), getRegisterSmaller(z));
-          fprintf(output, "0x%08X:\t%-25s\t{%s,%s,%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), getRegisterBigger(z), R[30], R[v], R[w], R[x], R[y], R[z]);
-          printf("0x%08X:\t%-25s\t{%s,%s,%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), getRegisterBigger(z), R[30], R[v], R[w], R[x], R[y], R[z]);
+          fprintf(output, "0x%08X:\t%-25s\t{%s,%s,%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), getRegisterBigger(z), sp, R[v], R[w], R[x], R[y], R[z]);
+          printf("0x%08X:\t%-25s\t{%s,%s,%s,%s,%s}=MEM[0x%08X]{0x%08X,0x%08X,0x%08X,0x%08X,0x%08X}\n", pc, instrucao, getRegisterBigger(v), getRegisterBigger(w), getRegisterBigger(x), getRegisterBigger(y), getRegisterBigger(z), sp, R[v], R[w], R[x], R[y], R[z]);
         } else {
           sprintf(instrucao, "pop, -");
-          fprintf(output, "0x%08x:\t%-25s\t{}=MEM[0x%08X]{}", pc, instrucao, R[30]);
-          printf("0x%08x:\t%-25s\t{}=MEM[0x%08X]{}", pc, instrucao, R[30]);
+          fprintf(output, "0x%08x:\t%-25s\t{}=MEM[0x%08X]{}", pc, instrucao, sp);
+          printf("0x%08x:\t%-25s\t{}=MEM[0x%08X]{}", pc, instrucao, sp);
         }
         break;	
 
