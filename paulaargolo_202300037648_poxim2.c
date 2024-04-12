@@ -297,9 +297,6 @@ int main(int argc, char *argv[]) {
   uint32_t watchdog = 0, counter = 0;
   bool watchdog_pending = false;
 
-  //fpu
-  //int fpuVector [*MEM32[R[30] >> 2]];
-
 
   //TERMINAL
   int caps = 16;
@@ -1537,7 +1534,7 @@ int main(int argc, char *argv[]) {
         shift = (8 * (3 - (addr % 4))); 
 
 
-		switch (addr) {
+		    switch (addr) {
           // FPU
           case 0x80808880:
             fpuX = R[z];
@@ -1564,7 +1561,7 @@ int main(int argc, char *argv[]) {
             }
             break;
 
-          case 0x88888888:
+          case 0x8888888B:
             //Terminal
 
             terminal = R[z];
@@ -1574,14 +1571,14 @@ int main(int argc, char *argv[]) {
             }
             teste[count] = terminal;
             count++;
-			break;
+			      break;
 
 
-		  default:
+		      default:
 
             shift = (8 * (3 - (addr % 4))); 
             break;
-		}
+		    }
 
 
         //0x????????:	s8 [rx+-s],rz            	MEM[0x????????]=Rz=0x??
