@@ -256,22 +256,6 @@ void pilhaISR(uint32_t* R, uint32_t* MEM) {
   R[30] -= 4;
 }
 
-/*void pilhaISR(uint32_t *MEM, uint32_t CR, uint32_t IPC, uint32_t PC, uint32_t SP, uint32_t SR,uint32_t *novo_PC, uint32_t *novo_SP, uint32_t *novo_CR, uint32_t *novo_IPC) {
-    uint32_t memoryfpu;
-    memoryfpu = MEM[SP >> 2];
-    memoryfpu = PC + 4;
-    SP = SP - 4;
-    memoryfpu = CR;
-    SP = SP - 4;
-    memoryfpu = IPC;
-    SP = SP - 4;
-
-    *novo_PC = PC + 4;
-    *novo_CR = CR;
-    *novo_IPC = IPC;
-    *novo_SP = SP;
-    
-} */
 
 
 // Função para configurar o estado do registrador FPU
@@ -296,6 +280,9 @@ int main(int argc, char *argv[]) {
   //WATCHDOG 
   uint32_t watchdog = 0, counter = 0;
   bool watchdog_pending = false;
+
+  //SW
+  bool activeSW = false;
 
 
   //TERMINAL
@@ -631,31 +618,25 @@ int main(int argc, char *argv[]) {
             // ZD ry = 0
             if (y == 0) {
               R[31] = R[31] | 0b100000;
-              if (bitIE(R[31], true)) {
-                  pilhaISR(R, MEM32);
-                  R[26] = 0;
-                  R[27] = R[29];
-                  R[29] = 0x00000008;
-
-                  // ZN rz = 0
-                  if (R[z] == 0) {
-                    (bitZN(R[31], true));
-                  }
-
-                  // CY rl != 0
-                  if (R[xyl] != 0) {
-                    (bitCY(R[31], true));
-                  }
-
-                  //0x????????:	div rl,rz,rx,ry          	Rl=Rx%Ry=0x????????,Rz=Rx/Ry=0x????????,SR=0x????????
-                  sprintf(instrucao, "div %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
-                  fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-                  printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-                  printf("[SOFTWARE INTERRUPTION]\n");
-                  fprintf(output, "[SOFTWARE INTERRUPTION]\n");
-                  R[29] = R[29] - 4;
-                  break;
+              //bitIE(R[31], true);
+              activeSW = true;
+              
+              // ZN rz = 0
+              if (R[z] == 0) {
+                (bitZN(R[31], true));
               }
+
+              // CY rl != 0
+              if (R[xyl] != 0) {
+                (bitCY(R[31], true));
+              }
+
+              //0x????????:	div rl,rz,rx,ry          	Rl=Rx%Ry=0x????????,Rz=Rx/Ry=0x????????,SR=0x????????
+              sprintf(instrucao, "div %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
+              fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+              printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
+              //R[29] = R[29] - 4;
+              break;
 
             } else {
 
@@ -746,31 +727,25 @@ int main(int argc, char *argv[]) {
             // ZD ry = 0
             if (y == 0) {
               R[31] = R[31] | 0b100000;
-              if (bitIE(R[31], true)) {
-                pilhaISR(R, MEM32);
-                R[26] = 0;
-                R[27] = R[29];
-                R[29] = 0x00000008;
+              //bitIE(R[31], true);
+              activeSW = true;
+              // ZN rz = 0
+              if (R[z] == 0) {
+                (bitZN(R[31], true));
+              }
 
-                // ZN rz = 0
-                if (R[z] == 0) {
-                  (bitZN(R[31], true));
-                }
-
-                // OV rl != 0
-                if (R[xyl] != 0) {
-                  (bitOV(R[31], true));
-                }
+              // OV rl != 0
+              if (R[xyl] != 0) {
+                (bitOV(R[31], true));
+              }
 
                 // 0x????????:	divs rl,rz,rx,ry // Rl=Rx%Ry=0x????????,Rz=Rx/Ry=0x????????,SR=0x????????
                 sprintf(instrucao, "divs %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
                 fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
                 printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-                printf("[SOFTWARE INTERRUPTION]\n");
-                fprintf(output, "[SOFTWARE INTERRUPTION]\n");
-                R[29] = R[29] - 4;
-                break;
-              }  
+                //R[29] = R[29] - 4;
+                break; 
+
             } else {
 
               R[xyl] = ((int)R[x] % R[y]); 
@@ -1216,33 +1191,26 @@ int main(int argc, char *argv[]) {
         // ZD i = 0
         if (i == 0) {
           R[31] = R[31] | 0b100000;
-          if (bitIE(R[31], true)) {
-            pilhaISR(R, MEM32);
-            R[26] = 0;
-            R[27] = R[29];
-            R[29] = 0x00000008;
+          activeSW = true;
 
-            // ZN rz = 0
-            if (R[z] != 0) {
-              R[31] = R[31] & ~0b1000000;
-            } else {
-              R[31] = R[31] | 0b1000000;
-            }
+          // ZN rz = 0
+          if (R[z] != 0) {
+            R[31] = R[31] & ~0b1000000;
+          } else {
+            R[31] = R[31] | 0b1000000;
+          }
 
-            // OV rl != 0
-            R[31] = R[31] & ~0b1000;
+          // OV rl != 0
+          R[31] = R[31] & ~0b1000;
             
 
             //0x????????:	divi rz,rx,s             	Rz=Rx/0x????????=0x????????,SR=0x????????
             sprintf(instrucao, "divi %s,%s,%i", getRegisterSmaller(z), getRegisterSmaller(x), ExtendedBit15To32(i));
             fprintf(output, "0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
             printf("0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
-            printf("[SOFTWARE INTERRUPTION]\n");
-            fprintf(output, "[SOFTWARE INTERRUPTION]\n");
-            R[29] = R[29] - 4;
+            //R[29] = R[29] - 4;
             break;
 
-          }  
         } else {
 
           R[z] = (R[x] / ExtendedBit15To32(i));
@@ -2287,6 +2255,19 @@ int main(int argc, char *argv[]) {
         break;
 
     } //fim do switch case
+
+    //sw
+    if (activeSW) {
+      if (R[31] & 0b10) {
+        printf("[SOFTWARE INTERRUPTION]\n");
+        fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+        pilhaISR(R, MEM32);
+        R[26] = 0;
+        R[27] = pc;
+        R[29] = 0x00000008;
+        activeSW = false;
+      }
+    } 
 
     //watchdog
 
