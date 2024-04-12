@@ -351,31 +351,6 @@ int main(int argc, char *argv[]) {
     uint8_t subcode = (R[28] & (0b111 << 8)) >> 8;
 
 
-    //watchdog
-
-      //10000000000000000000000000000000 AND ADDRESS OF WACTHDOG TRUE
-    if (0x80000000 & watchdog) {
-       if(counter == 0) {
-         watchdog_pending = true;
-        //and IE (bit 1  in status register SR) 
-        if (R[31] & 0b10) {
-          watchdog = 0;
-          printf("[HARDWARE INTERRUPTION 1]\n");
-          fprintf(output, "[HARDWARE INTERRUPTION 1]\n");
-          MEM32[R[30] >> 2] = R[29] + 4, R[30] = R[30] - 4;
-          MEM32[R[30] >> 2] = R[26], R[30] = R[30] - 4;
-          MEM32[R[30] >> 2] = R[27], R[30] = R[30] - 4;
-          R[27] = R[29]; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
-          R[29] = 0x00000010;
-          R[26] = 0xE1AC04DA; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
-          watchdog_pending = false;
-          continue;
-        }
-      } else {
-        counter -= 1;
-        watchdog -= 1;
-      }
-    }
 
      
     switch (opcode) 
@@ -2044,20 +2019,23 @@ int main(int argc, char *argv[]) {
       case 0b100000:
 
         pc = R[29];
-
+        //printf("pc 0x%08X\n", R[29]);
+        
         R[30] += 4;
         R[27] = MEM32[R[30] >> 2];
         R[30] += 4;
         R[26] = MEM32[R[30] >> 2];
         R[30] += 4;
         R[29] = MEM32[R[30] >> 2]; 
+        R[29] = R[29] - 4;
+
 
         //reti 	
         //IPC=MEM[0x????????]=0x????????,CR=MEM[0x????????]=0x????????,PC=MEM[0x????????]=0x????????
         sprintf(instrucao, "reti");
-        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29]);
-        printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29]);
-        R[29] -= 4;
+        fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29] + 4);
+        printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29] + 4);
+        //R[29] = R[29] - 4;
     
         break; 
 
@@ -2312,6 +2290,30 @@ int main(int argc, char *argv[]) {
         break;
 
     } //fim do switch case
+
+    //watchdog
+
+      //10000000000000000000000000000000 AND ADDRESS OF WACTHDOG TRUE
+    if (0x80000000 & watchdog) {
+       if(counter == 0) {
+         watchdog_pending = true;
+        //and IE (bit 1  in status register SR) 
+        if (R[31] & 0b10) {
+          watchdog = 0;
+          printf("[HARDWARE INTERRUPTION 1]\n");
+          fprintf(output, "[HARDWARE INTERRUPTION 1]\n");
+          pilhaISR(R, MEM32);
+          R[27] = pc; //ARMAZENA O ENDEREÇO DA INSTRUÇÃO ONDE A INTERRUPÇÃO FOI GERADA
+          R[29] = 0x00000010;
+          R[26] = 0xE1AC04DA; //ARMAZENA O CÓDIGO IDENTIFICADOR DAS INTERRUPÇÕES
+          watchdog_pending = false;
+          continue;
+        }
+      } else {
+        counter -= 1;
+        watchdog -= 1;
+      }
+    }
 
     //fpu    
     if ((numberOfCycles == 0) && (fpuOperation != 0) && (setIE(R[31]))) {
