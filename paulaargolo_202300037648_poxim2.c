@@ -254,8 +254,20 @@ void pilhaISR(uint32_t* R, uint32_t* MEM) {
   R[30] -= 4;
   MEM[R[30] >> 2] = R[27];
   R[30] -= 4;
+} 
+
+uint32_t get4ByteAddress(uint32_t address) {
+    uint32_t result = address >> 16;
+    return result;
 }
 
+uint32_t bitSelect(uint8_t numberBit, uint32_t hex, uint32_t address) {
+
+  uint32_t mask = 1 << numberBit;
+  uint32_t selectedBit = hex & mask;
+  selectedBit >>= address;
+  return selectedBit;
+}
 
 
 // Função para configurar o estado do registrador FPU
@@ -325,7 +337,7 @@ int main(int argc, char *argv[]) {
     char instrucao[30] = {0};
 
     uint8_t z = 0, x = 0, y = 0, v = 0, w = 0;
-    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, addr = 0, shift = 0, hardwareValue = 0, novo_PC, novo_SP, novo_CR, novo_IPC, memoryFpu, SR = 0, uint32_Rz = 0;
+    uint32_t pc = 0, xyl = 0, sp = 0, tmpSubi = 0, i = 0, ipc = 0, cr = 0, temp = 0, addr = 0, shift = 0, alt = 0, hardwareValue = 0, novo_PC, novo_SP, novo_CR, novo_IPC, memoryFpu, SR = 0, uint32_Rz = 0;
     uint64_t tmpSla_1 = 0, tmpSll_1 = 0,tmpSra_1 = 0, tmpSrl_1 = 0, cmp1 = 0, cmpi1 = 0, tmpMul_1 = 0, tmpMuls_1 = 0, tmpAdd_1 = 0;
     bool condicao = true;
 
@@ -1202,7 +1214,7 @@ int main(int argc, char *argv[]) {
           //fprintf(output, "0x%08X\n", R[z]);
 
           // ZN rz = 0
-          if (R[z] == 0) {
+          if ((R[x] / ExtendedBit15To32(i)) == 0) {
             R[31] = R[31] | 0b1000000;
           }
 
@@ -1222,9 +1234,7 @@ int main(int argc, char *argv[]) {
           R[z] = (R[x] / ExtendedBit15To32(i));
 
           // ZN rz = 0
-          if (R[z] != 0) {
-            R[31] = R[31] & ~0b1000000;
-          } else {
+          if (R[z] == 0) {
             R[31] = R[31] | 0b1000000;
           }
 
@@ -1238,7 +1248,7 @@ int main(int argc, char *argv[]) {
           // OV rl != 0
           R[31] = R[31] & ~0b1000;
 
-          fprintf(output, "ENTROU NO I != 0\n");
+          //fprintf(output, "ENTROU NO I != 0\n");
 
 
           //0x????????:	divi rz,rx,s             	Rz=Rx/0x????????=0x????????,SR=0x????????
@@ -1349,23 +1359,25 @@ int main(int argc, char *argv[]) {
         i = R[28] & 0xFFFF;
 
         addr = R[x] + ExtendedBit15To32(i);
-        //printf("0x%08X\n", addr);
-        shift = (8 * (3 - (addr % 4))); 
+        //shift = get4ByteAddress(addr);
+        
+        //shift = (8 * (3 - (addr % 4))); 
         sprintf(instrucao, "l8 %s,[%s%s%i]", getRegisterSmaller(z), getRegisterSmaller(x), (i >= 0) ? ("+") : (""), i);
 
         if  (addr == 0x80808080) {
+          fprintf(output, "WA\n");
           R[z] = watchdog;
           fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
 
         } else if (addr == 0x80808888) {
-          //printf("fpuZ\n");
+          fprintf(output, "rz\n");
           R[z] = fpuZ;
           fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
 
         } else if (addr == 0x8080888F) {
-          //printf("fpustatusoperation\n");
+          fprintf(output, "status\n");
           R[26] = 0;
           R[27] = 0;
           R[z] = fpuStatusAndOperation;
@@ -1373,8 +1385,14 @@ int main(int argc, char *argv[]) {
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
 
         } else {
-          //printf("MEMl8\n");
-          R[z] = ((MEM32[addr >> 2]) & (0xFF << (shift))) >> shift;  
+          //fprintf(output, "mem 0x%08X\n", R[z]);
+          alt = addr % 4;
+          shift = (8 * (3 - alt));
+        
+          //R[z] = bitSelect(1, MEM32[shift >> 2], addr);
+          //R[z] = ((MEM32[addr >> 2]) & (0xFF << (shift))) >> shift;
+          R[z] = (((MEM32[addr >> 2]) & (0xFF << shift)) >> shift);
+
           
           fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
@@ -1592,6 +1610,7 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16; 
         i = R[28] & 0xFFFF;  
         pc = R[29];
+        printf("AAAAAAAAAAAAAENTER\n");
         
 
         addr = ((R[x] + ExtendedBit15To32(i)) << 2);
@@ -1611,6 +1630,7 @@ int main(int argc, char *argv[]) {
           break;
 
         case 0x8080888F:
+        printf("AAAAAAAAAAAAA F\n");
           fpuStatusAndOperation = R[z];
           fpuLastOperation = fpuStatusAndOperation & 0b11111;
           fpuLastOperation = fpuOperation;
@@ -1631,6 +1651,7 @@ int main(int argc, char *argv[]) {
           
         default:
           // Regular memory
+          printf("AAAAAAAAAAAAAMEM\n");
           MEM32[addr >> 2] = R[z];
           break;
         }
