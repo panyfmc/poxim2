@@ -1554,9 +1554,9 @@ int main(int argc, char *argv[]) {
           teste[count] = terminal;
           count++;
         } else { 
-          R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
+           //MEM32[addr >> 2] & ((0xFF << (shift)) >> shift) = R[z]; 
 				  //MEM32[addr >> 2] &= ~(0xFF << (shift));
-				  //MEM32[addr >> 2] |= (R[z] & 0xFF) << (shift);
+				  MEM32[addr >> 2] = ((R[z] & 0xFF) << (shift)) >> shift;
         }
 
 
@@ -1643,7 +1643,7 @@ int main(int argc, char *argv[]) {
           default:
             // Regular memory
             //printf("rzde 0x%08X", R[z]);
-            R[z] = MEM32[R[x] + ExtendedBit15To32(i)]; 
+            MEM32[R[x] + ExtendedBit15To32(i)] = R[z]; 
             //printf("rz 0x%08X", R[z]);
             break;
         }
