@@ -611,11 +611,17 @@ int main(int argc, char *argv[]) {
             z = (R[28] & (0b11111 << 21)) >> 21;
             x = (R[28] & (0b11111 << 16)) >> 16;
             y = (R[28] & (0b11111 << 11)) >> 11;
+            
 
             // ZD ry = 0
-            if ((y == 0) && (R[31] & 0b10)) {
+            if ((R[y] == 0)) {
+              //fprintf(output, "AAAAAAAAAAAAAAAAAAA\n");
               R[31] = R[31] | 0b100000;
-              activeSW = true;
+
+              if (R[31] & 0b10) {
+                //fprintf(output, "bit ie ativoAAAAAAAAAAAAAAAAAAA\n");
+                activeSW = true;
+              }  
               
               // ZN rz = 0
               if (R[z] == 0) {
@@ -631,10 +637,8 @@ int main(int argc, char *argv[]) {
               sprintf(instrucao, "div %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
               fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
               printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-              //R[29] = R[29] - 4;
-              break;
-
             } else {
+              //fprintf(output, "BBBBBBBBBBBBBBBBBBBB\n");
 
               R[xyl] = ((int)R[x] % R[y]); 
               R[z] = ((int)(R[x] / R[y]));
@@ -664,8 +668,9 @@ int main(int argc, char *argv[]) {
               sprintf(instrucao, "div %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
               fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
               printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-              break;
+              //break;
             }
+            break;
 
 
             // srl
@@ -721,10 +726,12 @@ int main(int argc, char *argv[]) {
 
         
             // ZD ry = 0
-            if (y == 0 && (R[31] & 0b10)) {
+            if (R[y] == 0) {
               R[31] = R[31] | 0b100000;
-              //bitIE(R[31], true);
-              activeSW = true;
+              
+              if (R[31] & 0b10) {
+                activeSW = true;
+              }
               // ZN rz = 0
               if (R[z] == 0) {
                 (bitZN(R[31], true));
@@ -740,7 +747,7 @@ int main(int argc, char *argv[]) {
                 fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
                 printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
                 //R[29] = R[29] - 4;
-                break; 
+                //break; 
 
             } else {
 
@@ -772,9 +779,9 @@ int main(int argc, char *argv[]) {
               sprintf(instrucao, "divs %s,%s,%s,%s", getRegisterSmaller(xyl), getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
               fprintf(output, "0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
               printf("0x%08X:\t%-25s\t%s=%s%%%s=0x%08X,%s=%s/%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(xyl), getRegisterBigger(x), getRegisterBigger(y), R[xyl], getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
-              break;
+              //break;
             }
-
+            break;
 
 
           // sra
@@ -1185,27 +1192,30 @@ int main(int argc, char *argv[]) {
         i = R[28] & 0xFFFF;
 
         // ZD i = 0
-        if (i == 0 && (R[31] & 0b10)) {
+        if (i == 0) {
           R[31] = R[31] | 0b100000;
-          activeSW = true;
+
+          if (R[31] & 0b10) {
+            activeSW = true;
+          }
+          
+          //fprintf(output, "0x%08X\n", R[z]);
 
           // ZN rz = 0
-          if (R[z] != 0) {
-            R[31] = R[31] & ~0b1000000;
-          } else {
+          if (R[z] == 0) {
             R[31] = R[31] | 0b1000000;
           }
 
           // OV rl != 0
           R[31] = R[31] & ~0b1000;
-            
 
-            //0x????????:	divi rz,rx,s             	Rz=Rx/0x????????=0x????????,SR=0x????????
-            sprintf(instrucao, "divi %s,%s,%i", getRegisterSmaller(z), getRegisterSmaller(x), ExtendedBit15To32(i));
-            fprintf(output, "0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
-            printf("0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
-            //R[29] = R[29] - 4;
-            break;
+          //fprintf(output, "ENTROU NO I == 0\n");
+
+          //0x????????:	divi rz,rx,s             	Rz=Rx/0x????????=0x????????,SR=0x????????
+          sprintf(instrucao, "divi %s,%s,%i", getRegisterSmaller(z), getRegisterSmaller(x), ExtendedBit15To32(i));
+          fprintf(output, "0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
+          printf("0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
+          //R[29] = R[29] - 4;
 
         } else {
 
@@ -1228,13 +1238,15 @@ int main(int argc, char *argv[]) {
           // OV rl != 0
           R[31] = R[31] & ~0b1000;
 
+          fprintf(output, "ENTROU NO I != 0\n");
+
 
           //0x????????:	divi rz,rx,s             	Rz=Rx/0x????????=0x????????,SR=0x????????
           sprintf(instrucao, "divi %s,%s,%i", getRegisterSmaller(z), getRegisterSmaller(x), ExtendedBit15To32(i));
           fprintf(output, "0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
           printf("0x%08X:\t%-25s\t%s=%s/0x%08X=0x%08X,SR=0x%08X\n", R[29], instrucao, getRegisterBigger(z), getRegisterBigger(x), ExtendedBit15To32(i), R[z], R[31]);
-          break;
         }
+        break;
 
 
      //modi
@@ -1433,8 +1445,8 @@ int main(int argc, char *argv[]) {
                 //printf("TETO\n");
                 roundedValueFpu = ceil(fpuZ);
                 memcpy(&uint32_Rz, &roundedValueFpu, sizeof(uint32_t));
-                fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
-                printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
+                fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEE ? uint32_Rz : R[z]);
+                printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEE ? uint32_Rz : R[z]);
                 break;
 
               //piso
@@ -1442,8 +1454,8 @@ int main(int argc, char *argv[]) {
                 //printf("PIS0\n");
                 roundedValueFpu = floor(fpuZ); 
                 memcpy(&uint32_Rz, &roundedValueFpu, sizeof(uint32_t));
-                fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
-                printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
+                fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEE ? uint32_Rz : R[z]);
+                printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEE ? uint32_Rz : R[z]);
                 break;
 
               //arredondamento
@@ -1451,8 +1463,8 @@ int main(int argc, char *argv[]) {
                 //printf("ARREDONDAMENTO\n");
                 roundedValueFpu = round(fpuZ);
                 memcpy(&uint32_Rz, &roundedValueFpu, sizeof(uint32_t));
-                fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
-                printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, uint32_Rz);
+                fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEE ? uint32_Rz : R[z]);
+                printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEE ? uint32_Rz : R[z]);
                 break;
                 
               default:
@@ -1996,8 +2008,6 @@ int main(int argc, char *argv[]) {
         sprintf(instrucao, "reti");
         fprintf(output, "0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29] + 4);
         printf("0x%08X:\t%-25s\tIPC=MEM[0x%08X]=0x%08X,CR=MEM[0x%08X]=0x%08X,PC=MEM[0x%08X]=0x%08X\n", pc, instrucao, R[30] - 8, R[27], R[30] - 4, R[26], R[30], R[29] + 4);
-        //R[29] = R[29] - 4;
-    
         break; 
 
 
@@ -2226,16 +2236,6 @@ int main(int argc, char *argv[]) {
           // sbr
             R[z] = R[z] | (0b1 << x);
 
-            //sw
-            if (activeSW) {
-                printf("[SOFTWARE INTERRUPTION]\n");
-                fprintf(output, "[SOFTWARE INTERRUPTION]\n");
-                pilhaISR(R, MEM32);
-                R[26] = 0;
-                R[27] = pc;
-                R[29] = 0x00000008;
-                activeSW = false;
-            } 
 
         //0x????????:	sbr rz[x]                	Rz=0x????????
           sprintf(instrucao, "sbr %s[%u]", getRegisterSmaller(z), x);
@@ -2263,6 +2263,18 @@ int main(int argc, char *argv[]) {
 
     } //fim do switch case
 
+    //sw
+    if (activeSW) {
+        printf("[SOFTWARE INTERRUPTION]\n");
+        fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+        //fprintf(output, "TESTE\n");
+        pilhaISR(R, MEM32);
+        R[26] = 0;
+        R[27] = pc;
+        R[29] = 0x00000008;
+        activeSW = false;
+        R[29] = R[29] - 4;
+    } 
 
     //watchdog
 
@@ -2305,7 +2317,6 @@ int main(int argc, char *argv[]) {
          
           fpuZ = fpuX + fpuY;
           shiftIEEE = true;
-          
           
           break;
 
