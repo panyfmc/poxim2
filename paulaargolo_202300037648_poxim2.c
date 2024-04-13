@@ -334,8 +334,6 @@ int main(int argc, char *argv[]) {
     uint8_t opcode = (R[28] & (0b111111 << 26)) >> 26;
     uint8_t subcode = (R[28] & (0b111 << 8)) >> 8;
 
-
-
      
     switch (opcode) 
     {
@@ -483,7 +481,6 @@ int main(int argc, char *argv[]) {
            
             // R[l] : R[z] = R[x] * R[y]
             tmpMul_1 = (((uint64_t)R[xyl] << 32) | (uint64_t)R[z]);
-            tmpMul_1 = (uint64_t)(R[x] * R[y]);
 
             verifyZero(xyl, 1, tmpMul_1);
             verifyZero(z, 1, tmpMul_1);
@@ -616,9 +613,8 @@ int main(int argc, char *argv[]) {
             y = (R[28] & (0b11111 << 11)) >> 11;
 
             // ZD ry = 0
-            if (y == 0) {
+            if ((y == 0) && (R[31] & 0b10)) {
               R[31] = R[31] | 0b100000;
-              //bitIE(R[31], true);
               activeSW = true;
               
               // ZN rz = 0
@@ -725,7 +721,7 @@ int main(int argc, char *argv[]) {
 
         
             // ZD ry = 0
-            if (y == 0) {
+            if (y == 0 && (R[31] & 0b10)) {
               R[31] = R[31] | 0b100000;
               //bitIE(R[31], true);
               activeSW = true;
@@ -1189,7 +1185,7 @@ int main(int argc, char *argv[]) {
         i = R[28] & 0xFFFF;
 
         // ZD i = 0
-        if (i == 0) {
+        if (i == 0 && (R[31] & 0b10)) {
           R[31] = R[31] | 0b100000;
           activeSW = true;
 
@@ -2230,6 +2226,17 @@ int main(int argc, char *argv[]) {
           // sbr
             R[z] = R[z] | (0b1 << x);
 
+            //sw
+            if (activeSW) {
+                printf("[SOFTWARE INTERRUPTION]\n");
+                fprintf(output, "[SOFTWARE INTERRUPTION]\n");
+                pilhaISR(R, MEM32);
+                R[26] = 0;
+                R[27] = pc;
+                R[29] = 0x00000008;
+                activeSW = false;
+            } 
+
         //0x????????:	sbr rz[x]                	Rz=0x????????
           sprintf(instrucao, "sbr %s[%u]", getRegisterSmaller(z), x);
           fprintf(output, "0x%08X:\t%-25s\t%s=0x%08X\n", R[29], instrucao, getRegisterBigger(z), R[z]);
@@ -2256,18 +2263,6 @@ int main(int argc, char *argv[]) {
 
     } //fim do switch case
 
-    //sw
-    if (activeSW) {
-      if (R[31] & 0b10) {
-        printf("[SOFTWARE INTERRUPTION]\n");
-        fprintf(output, "[SOFTWARE INTERRUPTION]\n");
-        pilhaISR(R, MEM32);
-        R[26] = 0;
-        R[27] = pc;
-        R[29] = 0x00000008;
-        activeSW = false;
-      }
-    } 
 
     //watchdog
 
