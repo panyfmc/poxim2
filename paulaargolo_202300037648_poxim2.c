@@ -1359,7 +1359,6 @@ int main(int argc, char *argv[]) {
         i = R[28] & 0xFFFF;
 
         addr = R[x] + ExtendedBit15To32(i);
-        //shift = get4ByteAddress(addr);
         
         //shift = (8 * (3 - (addr % 4))); 
         sprintf(instrucao, "l8 %s,[%s%s%i]", getRegisterSmaller(z), getRegisterSmaller(x), (i >= 0) ? ("+") : (""), i);
@@ -1393,7 +1392,6 @@ int main(int argc, char *argv[]) {
           //R[z] = ((MEM32[addr >> 2]) & (0xFF << (shift))) >> shift;
           R[z] = (((MEM32[addr >> 2]) & (0xFF << shift)) >> shift);
 
-          
           fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%02X\n", pc, instrucao, getRegisterBigger(z), addr, R[z]);
         }
@@ -1428,7 +1426,8 @@ int main(int argc, char *argv[]) {
         i = R[28] & 0xFFFF;
         pc = R[29];
 
-        addr = R[x] + i;
+        addr = R[x] + ExtendedBit15To32(i);
+        //fprintf(output, "0x%08X\n", addr);
 
         sprintf(instrucao, "l32 %s,[%s%s%i]", getRegisterSmaller(z), getRegisterSmaller(x), (i >= 0) ? ("+") : (""), i);
 
@@ -1452,6 +1451,7 @@ int main(int argc, char *argv[]) {
           fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEEOfY ? uint32_Rz : R[z]);
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, shiftIEEEOfY ? uint32_Rz : R[z]);
 
+          //as operações do st são somente na leitura
         } else if (addr == 0x20202222) {
           //printf("FPU COM LAST OPERATION\n");
           R[z] = fpuZ;
@@ -1501,14 +1501,15 @@ int main(int argc, char *argv[]) {
             
 
         } else if (addr == 0x20202223) {
-          //printf("FPU STATUS 20202223\n");
+          //fprintf(output, "FPU STATUS 20202223\n");
           R[z] = fpuStatusAndOperation;
           fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
           
         } else {
           //printf("MEMORIA\n");
-          R[z] = MEM32[addr];
+          R[z] = MEM32[R[x] + ExtendedBit15To32(i)]; 
+          //R[z] = MEM32[addr];
           fprintf(output, "0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
           printf("0x%08X:\t%-25s\t%s=MEM[0x%08X]=0x%08X\n", pc, instrucao, getRegisterBigger(z), (addr) << 2, R[z]);
           
@@ -1528,51 +1529,35 @@ int main(int argc, char *argv[]) {
         shift = (8 * (3 - (addr % 4))); 
 
 
-		    switch (addr) {
-          // FPU
-          case 0x80808880:
-            fpuX = R[z];
-            break;
-
-          case 0x80808884:
-            fpuY = R[z];
-            break;
-
-          case 0x80808888:
-            fpuZ = R[z];
-            break;
-
-          case 0x8080888F:
-
-            fpuStatusAndOperation = R[z];
-            fpuOperation = fpuStatusAndOperation & 0b11111;
-            fpuLastOperation = fpuOperation;
-
-            if (fpuOperation >= 0b1 && fpuOperation <= 0b100) {      //estiver entre 1 e 4, então o número de ciclos é calculado chamando a função calcular n° ciclos
-              numberOfCycles = calcularNumeroDeCiclos(fpuX, fpuY);
-            } else {
-              numberOfCycles = 1;
-            }
-            break;
-
-          case 0x8888888B:
-            //Terminal
-
-            terminal = R[z];
-            if (count == caps) {
-                caps = caps << 1;
-                teste = (char*)(realloc(teste, caps));
-            }
-            teste[count] = terminal;
-            count++;
-			      break;
-
-
-		      default:
-
-            shift = (8 * (3 - (addr % 4))); 
-            break;
-		    }
+		    if (addr == 0x80808880) {
+          fpuX = R[z];
+        } else if (addr == 0x80808884) {
+          fpuY = R[z];
+        } else if (addr == 0x80808888) {
+          fpuZ = R[z];
+        } else if (addr == 0x8080888F) {
+          fpuStatusAndOperation = R[z];
+          fpuOperation = fpuStatusAndOperation & 0b11111;
+          fpuLastOperation = fpuOperation;
+          if (fpuOperation >= 0b1 && fpuOperation <= 0b100) {  //estiver entre 1 e 4, então o número de ciclos é calculado
+            numberOfCycles = calcularNumeroDeCiclos(fpuX, fpuY);
+          } else {
+            numberOfCycles = 1;
+          }
+        } else if (addr == 0x8888888B) {
+          //Terminal
+          terminal = R[z];
+          if (count == caps) {
+            caps = caps << 1;
+            teste = (char*)(realloc(teste, caps));
+          }
+          teste[count] = terminal;
+          count++;
+        } else { 
+          R[z] = (((0xFF << (shift))) >> shift) & (MEM32[addr >> 2]); 
+				  //MEM32[addr >> 2] &= ~(0xFF << (shift));
+				  //MEM32[addr >> 2] |= (R[z] & 0xFF) << (shift);
+        }
 
 
         //0x????????:	s8 [rx+-s],rz            	MEM[0x????????]=Rz=0x??
@@ -1610,50 +1595,57 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 16; 
         i = R[28] & 0xFFFF;  
         pc = R[29];
-        printf("AAAAAAAAAAAAAENTER\n");
+        //printf("AAAAAAAAAAAAAENTER\n");
         
 
         addr = ((R[x] + ExtendedBit15To32(i)) << 2);
 
         switch (addr) {
-        // FPU
-        case 0x80808880:
-          fpuX = R[z];
-          break;
+          //printf("AAAAAAAAAAAAAENTER\n");
+          // FPU
+          case 0x80808880:
+            printf("AAAAAAAAAAAAAENTER\n");
+            fpuX = R[z];
+            break;
 
-        case 0x80808884:
-          fpuY = R[z];
-          break;
+          case 0x80808884:
+            fpuY = R[z];
+            break;
 
-        case 0x80808888:
-          fpuZ = R[z];
-          break;
+          case 0x80808888:
+            fpuZ = R[z];
+            break;
 
-        case 0x8080888F:
-        printf("AAAAAAAAAAAAA F\n");
-          fpuStatusAndOperation = R[z];
-          fpuLastOperation = fpuStatusAndOperation & 0b11111;
-          fpuLastOperation = fpuOperation;
-          if (fpuOperation >= 0b1 && fpuOperation <= 0b00100) {
-            numberOfCycles = calcularNumeroDeCiclos(fpuX, fpuY);
-          } else {
-            // Invalid instruction
-            numberOfCycles = 1;
-          }
+          case 0x8080888C:
+            fpuStatusAndOperation = R[z];
+            break;
 
-          break;
+          case 0x8080888F:
+            printf("AAAAAAAAAAAAA F\n");
+            fpuStatusAndOperation = R[z];
+            fpuLastOperation = fpuStatusAndOperation & 0b11111;
+            fpuLastOperation = fpuOperation;
+            if (fpuOperation >= 0b1 && fpuOperation <= 0b100) {
+              numberOfCycles = calcularNumeroDeCiclos(fpuX, fpuY);
+            } else {
+              // Invalid instruction
+              numberOfCycles = 1;
+            }
+            break;
 
-          // Watchdog
-        case 0x80808080:
-          watchdog = R[z];
-          counter = (0x7FFFFFFF & watchdog);
-          break;
-          
-        default:
-          // Regular memory
-          printf("AAAAAAAAAAAAAMEM\n");
-          MEM32[addr >> 2] = R[z];
-          break;
+            // Watchdog
+          case 0x80808080:
+            //printf("AAAAAAAAAAAAAENTER\n");
+            watchdog = R[z];
+            counter = (0x7FFFFFFF & watchdog);
+            break;
+            
+          default:
+            // Regular memory
+            //printf("rzde 0x%08X", R[z]);
+            R[z] = MEM32[R[x] + ExtendedBit15To32(i)]; 
+            //printf("rz 0x%08X", R[z]);
+            break;
         }
                
 
