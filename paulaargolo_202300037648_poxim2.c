@@ -19,9 +19,7 @@ void verifyZero(uint32_t reg, uint32_t teste, uint64_t temp) {
 //verificar um bit  -- value: valor a verificar -- bitPosition: A posição do bit (0 a 31).
 // 1 se o bit estiver definido -- 0 se o bit estiver desligado -- -1 se bitPosition for inválido.
 int checkBit32(uint32_t value, int bitPosition) {
-    // Cria uma máscara para isolar o bit
     uint32_t mask = 1u << bitPosition;
-    // Aplica a máscara e verifica se o bit é 0 ou 1
     return (value & mask) != 0;
 }
 
