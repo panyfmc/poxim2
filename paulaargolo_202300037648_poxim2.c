@@ -371,7 +371,6 @@ int main(int argc, char *argv[]) {
         x = (R[28] & (0b11111 << 16)) >> 21;
         y = (R[28] & (0b11111 << 11)) >> 11;
         xyl = R[28] & 0x1FFFFF;
-
         R[z] = ExtendedBit21To32(xyl);
 
       //0x????????:	movs rz,s                	Rz=0x????????
@@ -388,8 +387,6 @@ int main(int argc, char *argv[]) {
         z = (R[28] & (0b11111 << 21)) >> 21;
         x = (R[28] & (0b11111 << 16)) >> 16;
         y = (R[28] & (0b11111 << 11)) >> 11;
-
-        //tmpAdd_1 = R[x] + R[y];
 
         tmpAdd_1 = (uint64_t)(R[x]) + (uint64_t)(R[y]);
         (uint64_t)(R[z]);
@@ -425,7 +422,7 @@ int main(int argc, char *argv[]) {
         }
 
 
-      // 0x????????:	add rz,rx,ir Rz=Rx+IR=0x????????,SR=0x????????
+      	// 0x????????:	add rz,rx,ir Rz=Rx+IR=0x????????,SR=0x????????
         sprintf(instrucao, "add %s,%s,%s", getRegisterSmaller(z), getRegisterSmaller(x), getRegisterSmaller(y));
         fprintf(output, "0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
         printf("0x%08X:\t%-25s\t%s=%s+%s=0x%08X,SR=0x%08X\n", pc, instrucao, getRegisterBigger(z), getRegisterBigger(x), getRegisterBigger(y), R[z], R[31]);
@@ -455,7 +452,6 @@ int main(int argc, char *argv[]) {
 
             R[z] = (uint32_t)setRegistrador(z, (tmpSla_1 >> 32) & 0xFFFFFFFF);
             R[x] = (uint32_t)setRegistrador(x, (tmpSla_1) & 0xFFFFFFFF);
-
             tmpSla_1 = R[x] | R[z];
 
             //zn rlrz = 0
